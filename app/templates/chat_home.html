@@ -1,0 +1,122 @@
+{% extends "base_student.html" %}
+{% block content %}
+
+
+
+<div class="main">
+
+    <div style="max-width:800px; margin:auto;">
+
+        <!-- Header -->
+        <h2 style="margin-bottom:25px;">Your Study Sessions</h2>
+
+        <!-- Create Session Card -->
+        <div style="
+            background:white;
+            padding:25px;
+            border-radius:16px;
+            border:1px solid #e6ecff;
+            margin-bottom:35px;
+        ">
+
+            <form method="POST" action="{% url 'create_session' %}"
+                  style="display:flex; gap:15px; align-items:center;">
+                {% csrf_token %}
+
+                <input type="text" name="topic"
+                       placeholder="Session Topic"
+                       required
+                       style="
+                       flex:1;
+                       padding:14px;
+                       border-radius:12px;
+                       border:1px solid #e6ecff;
+                       outline:none;
+                       font-size:14px;
+                       ">
+
+                <select name="subject"
+                        required
+                        style="
+                        width:190px;
+                        padding:14px;
+                        border-radius:12px;
+                        border:1px solid #e6ecff;
+                        outline:none;
+                        font-size:14px;
+                        background:white;
+                        color:#111;
+                        cursor:pointer;
+                        ">
+                    <option value="" disabled selected>Subject</option>
+                    <option value="Biology">Biology</option>
+                    <option value="Physics">Physics</option>
+                    <option value="Chemistry">Chemistry</option>
+                    <option value="Science">Science</option>
+                    <option value="Maths">Maths</option>
+                    <option value="Algebra">Algebra</option>
+                    <option value="Geometry">Geometry</option>
+                    <option value="Civics / History">Civics / History</option>
+                    <option value="Geography">Geography</option>
+                    <option value="Hindi">Hindi</option>
+                    <option value="Marathi">Marathi</option>
+                    <option value="English">English</option>
+                </select>
+
+                <button type="submit" class="btn">
+                    Create
+                </button>
+
+            </form>
+
+        </div>
+
+        <!-- Sessions List -->
+        <div style="display:flex; flex-direction:column; gap:18px;">
+
+            {% for s in sessions %}
+
+                <a href="{% url 'chat_room' s.id %}" style="
+                    text-decoration:none;
+                    background:white;
+                    padding:20px;
+                    border-radius:16px;
+                    border:1px solid #e6ecff;
+                    transition:all 0.2s ease;
+                "
+                onmouseover="this.style.borderColor='#1f6feb';"
+                onmouseout="this.style.borderColor='#e6ecff';"
+                >
+
+                    <div style="font-weight:600; font-size:16px; color:#111;">
+                        {{ s.topic }}
+                    </div>
+
+                    <div style="margin-top:6px; font-size:13px; color:#64748b;">
+                        Subject: {{ s.subject }}
+                    </div>
+
+                </a>
+
+            {% empty %}
+
+                <div style="
+                    background:white;
+                    padding:30px;
+                    border-radius:16px;
+                    border:1px solid #e6ecff;
+                    text-align:center;
+                    color:#64748b;
+                ">
+                    No sessions yet. Create your first study session.
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

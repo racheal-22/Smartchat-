@@ -1,0 +1,348 @@
+{% extends "base_teacher.html" %}
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+  :root {
+    --blue:    #1d4ed8; --blue-l:  #3b82f6; --blue-xl: #eff6ff;
+    --slate:   #1e293b; --muted:   #64748b; --border:  #e2e8f0;
+    --bg:      #f8fafc; --white:   #ffffff; --radius:  16px;
+    --shadow:  0 4px 20px rgba(29,78,216,.07);
+  }
+  .dash-wrap { max-width: 1200px; margin: 0 auto; }
+
+  .school-hero {
+    background: linear-gradient(135deg,#1e3a8a,#1d4ed8 55%,#60a5fa);
+    border-radius: var(--radius); padding: 36px 40px; color: #fff;
+    margin-bottom: 28px; display: flex; justify-content: space-between;
+    align-items: center; flex-wrap: wrap; gap: 16px;
+  }
+  .school-hero h2  { margin:0; font-size:1.7rem; font-weight:800; }
+  .school-hero p   { margin:5px 0 0; opacity:.78; font-size:.9rem; }
+  .hero-stats      { display:flex; gap:36px; flex-wrap:wrap; }
+  .hs-item .hs-val { font-size:2.4rem; font-weight:900; line-height:1; }
+  .hs-item .hs-lbl { font-size:.78rem; opacity:.7; margin-top:2px; }
+
+  .card { background:var(--white); border-radius:var(--radius); padding:24px 26px; box-shadow:var(--shadow); margin-bottom:24px; }
+  .card h3    { margin:0 0 3px; font-size:1rem; font-weight:700; color:#1e293b; }
+  .card-sub   { font-size:.8rem; color:#64748b; margin:0 0 16px; }
+
+  .chart-box { position:relative; overflow:hidden; }
+  .chart-box canvas { display:block; }
+
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
+  @media(max-width:900px){ .grid-2,.grid-4{ grid-template-columns:1fr; } }
+  @media(max-width:600px){ .grid-4{ grid-template-columns:1fr 1fr; } }
+
+  .dim-tile { border-radius:14px; padding:20px 18px; color:#fff; position:relative; overflow:hidden; }
+  .dim-tile::after { content:attr(data-icon); position:absolute; right:12px; bottom:8px; font-size:2.6rem; opacity:.14; }
+  .dim-tile .dt-label { font-size:.74rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; opacity:.82; }
+  .dim-tile .dt-val   { font-size:2rem; font-weight:800; line-height:1.1; margin:6px 0 2px; }
+  .dim-tile .dt-desc  { font-size:.74rem; opacity:.72; }
+  .dt-logic     { background:linear-gradient(135deg,#1d4ed8,#818cf8); }
+  .dt-systems   { background:linear-gradient(135deg,#0f766e,#2dd4bf); }
+  .dt-narrative { background:linear-gradient(135deg,#b45309,#fbbf24); }
+  .dt-spatial   { background:linear-gradient(135deg,#7c3aed,#c084fc); }
+
+  .insight-card { border-radius:var(--radius); padding:22px 24px; box-shadow:var(--shadow); background:var(--white); }
+  .insight-card .ic-eyebrow { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; margin-bottom:6px; }
+  .insight-card .ic-title { font-size:1.1rem; font-weight:800; margin:0 0 10px; }
+  .insight-card .ic-desc  { font-size:.84rem; color:#64748b; line-height:1.65; margin:0; white-space:pre-line; }
+  .ic-strong { border-top:4px solid #22c55e; }
+  .ic-weak   { border-top:4px solid #ef4444; }
+
+  .curiosity-banner {
+    background: linear-gradient(135deg,#7c3aed,#a855f7);
+    border-radius: var(--radius); padding: 24px 28px; color: #fff;
+    margin-bottom: 24px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  }
+  .curiosity-banner .cb-icon  { font-size:2.6rem; }
+  .curiosity-banner .cb-val   { font-size:2.4rem; font-weight:900; line-height:1; }
+  .curiosity-banner .cb-label { font-size:.88rem; opacity:.82; margin-top:3px; }
+  .curiosity-banner .cb-note  { margin-left:auto; font-size:.8rem; opacity:.72; max-width:280px; line-height:1.5; }
+
+  .dim-explainer { display:flex; gap:12px; flex-wrap:wrap; }
+  .de-chip { flex:1 1 180px; background:var(--bg); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
+  .de-icon { font-size:1.4rem; margin-bottom:6px; }
+  .de-name { font-size:.8rem; font-weight:800; color:#1e293b; margin-bottom:4px; }
+  .de-desc { font-size:.78rem; color:#64748b; line-height:1.5; }
+
+  .diff-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .diff-row:last-child { border:none; }
+  .diff-topic    { flex:1; font-size:.88rem; color:#1e293b; }
+  .diff-bar-wrap { flex:2; background:#f1f5f9; border-radius:20px; height:8px; overflow:hidden; }
+  .diff-bar      { height:100%; border-radius:20px; background:linear-gradient(90deg,#f43f5e,#fb7185); }
+  .diff-score    { font-size:.78rem; font-weight:700; color:#e11d48; min-width:32px; text-align:right; }
+  .info-note     { font-size:.78rem; color:#64748b; background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; padding:10px 14px; margin-bottom:14px; line-height:1.5; }
+
+  .engage-val  { font-size:3rem; font-weight:900; color:#1d4ed8; line-height:1; margin:12px 0 4px; }
+  .engage-unit { font-size:.9rem; color:#64748b; margin:0 0 14px; }
+  .engage-note { font-size:.8rem; color:#64748b; background:var(--blue-xl); padding:12px 14px; border-radius:10px; }
+
+  .empty-msg { color:#64748b; font-size:.88rem; padding:14px 0; margin:0; }
+</style>
+
+<div class="dash-wrap">
+
+  <!-- Hero -->
+  <div class="school-hero">
+    <div>
+      <h2>🏫 School Intelligence Dashboard</h2>
+      <p>Whole-school learning analytics &nbsp;·&nbsp; SmartChat Platform</p>
+    </div>
+    <div class="hero-stats">
+      <div class="hs-item">
+        <div class="hs-val">{{ total_students|default:0 }}</div>
+        <div class="hs-lbl">Students</div>
+      </div>
+      <div class="hs-item">
+        <div class="hs-val">{{ total_school_xp|default:0 }}</div>
+        <div class="hs-lbl">Total XP Earned</div>
+      </div>
+      <div class="hs-item">
+        <div class="hs-val">{{ avg_xp|default:0 }}</div>
+        <div class="hs-lbl">Avg XP / Student</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Curiosity Banner ── -->
+  <div class="curiosity-banner">
+    <div class="cb-icon">🔭</div>
+    <div>
+      {% if unique_topics_count %}
+        <div class="cb-val">{{ unique_topics_count }} unique topic{% if unique_topics_count != 1 %}s{% endif %}</div>
+      {% else %}
+        <div class="cb-val" style="font-size:1.4rem;">No topics explored yet</div>
+      {% endif %}
+      <div class="cb-label">Unique topics explored by students across the school</div>
+    </div>
+    <div class="cb-note">
+      The curiosity score reflects how broadly students use SmartChat to explore topics beyond their core textbook. Higher values indicate a more intellectually curious school culture.
+    </div>
+  </div>
+
+  <!-- ── Strongest / Weakest Dimension ── -->
+  <div class="grid-2" style="margin-bottom:24px;">
+    <div class="insight-card ic-strong">
+      <div class="ic-eyebrow" style="color:#16a34a;">✅ Strongest Learning Dimension</div>
+      {% if has_dimension_data %}
+        <div class="ic-title">{{ strongest_dimension }}</div>
+        <p class="ic-desc" id="strongDesc"></p>
+      {% else %}
+        <div class="ic-title" style="font-size:.95rem;color:#64748b;">No learning data yet.</div>
+        <p class="ic-desc">Insights will appear once students complete quizzes.</p>
+      {% endif %}
+    </div>
+    <div class="insight-card ic-weak">
+      <div class="ic-eyebrow" style="color:#dc2626;">⚠️ Learning Area Needing Improvement</div>
+      {% if has_dimension_data %}
+        <div class="ic-title">{{ weakest_dimension }}</div>
+        <p class="ic-desc" id="weakDesc"></p>
+      {% else %}
+        <div class="ic-title" style="font-size:.95rem;color:#64748b;">No learning data yet.</div>
+        <p class="ic-desc">Insights will appear once students complete quizzes.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── 4 Dimension Tiles ── -->
+  <div class="grid-4" style="margin-bottom:24px;">
+    <div class="dim-tile dt-logic" data-icon="🧮">
+      <div class="dt-label">Avg Logic</div>
+      <div class="dt-val">{{ avg_logic }}</div>
+      <div class="dt-desc">Problem Solving</div>
+    </div>
+    <div class="dim-tile dt-systems" data-icon="🔍">
+      <div class="dt-label">Avg Systems</div>
+      <div class="dt-val">{{ avg_systems }}</div>
+      <div class="dt-desc">Analytical Reasoning</div>
+    </div>
+    <div class="dim-tile dt-narrative" data-icon="📘">
+      <div class="dt-label">Avg Narrative</div>
+      <div class="dt-val">{{ avg_narrative }}</div>
+      <div class="dt-desc">Conceptual Understanding</div>
+    </div>
+    <div class="dim-tile dt-spatial" data-icon="⏳">
+      <div class="dt-label">Avg Spatial</div>
+      <div class="dt-val">{{ avg_spatial }}</div>
+      <div class="dt-desc">Learning Consistency</div>
+    </div>
+  </div>
+
+  <!-- ── School Intelligence Radar + Most Popular Subjects ── -->
+  <div class="grid-2">
+    <div class="card">
+      <h3>School Intelligence Radar</h3>
+      <p class="card-sub">Average XP per learning dimension across the whole school. A balanced shape indicates well-rounded development.</p>
+      {% if has_dimension_data %}
+        <div class="chart-box" style="height:300px;">
+          <canvas id="schoolRadar"></canvas>
+        </div>
+      {% else %}
+        <p class="empty-msg">No quiz data yet. The radar chart will appear once students complete quizzes.</p>
+      {% endif %}
+    </div>
+    <div class="card">
+      <h3>📚 Most Popular Subjects Across School</h3>
+      <p class="card-sub">Shows which subjects students interact with most in SmartChat. Higher bars indicate stronger subject curiosity school-wide.</p>
+      {% if subject_engagement %}
+        <div class="chart-box" style="height:300px;">
+          <canvas id="subjectBar"></canvas>
+        </div>
+      {% else %}
+        <p class="empty-msg">No subject data yet. This chart will appear once students start SmartChat sessions.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── Dimensions Explainer ── -->
+  <div class="card">
+    <h3>📐 Learning Dimensions Explained</h3>
+    <p class="card-sub">A guide to help teachers interpret what each XP dimension means and how students earn them.</p>
+    <div class="dim-explainer">
+      <div class="de-chip">
+        <div class="de-icon">🧮</div>
+        <div class="de-name">Logic — Problem Solving</div>
+        <div class="de-desc">Earned through calculation and formula-based quiz questions. High scores indicate strong numerical and mathematical reasoning.</div>
+      </div>
+      <div class="de-chip">
+        <div class="de-icon">🔍</div>
+        <div class="de-name">Systems — Analytical Thinking</div>
+        <div class="de-desc">Earned through reasoning questions. High scores mean students understand cause and effect and can explain how things work.</div>
+      </div>
+      <div class="de-chip">
+        <div class="de-icon">📘</div>
+        <div class="de-name">Narrative — Conceptual Understanding</div>
+        <div class="de-desc">Earned when exploring new topics. High scores mean students actively seek conceptual knowledge and understand theory well.</div>
+      </div>
+      <div class="de-chip">
+        <div class="de-icon">⏳</div>
+        <div class="de-name">Spatial — Learning Consistency</div>
+        <div class="de-desc">Earned through daily quiz streaks. High scores indicate students who practice regularly and maintain strong learning habits.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Topic Difficulty + Engagement Score ── -->
+  <div class="grid-2">
+    <div class="card">
+      <h3>⚠️ Topics Students Struggle With Most</h3>
+      <p class="card-sub">Difficulty Score = chat session volume + incorrect quiz answers on that topic across the school.</p>
+      <div class="info-note">
+        💡 <strong>How to read this:</strong> Topics near the top of this list are areas where students ask many questions yet still answer quizzes incorrectly. These topics need stronger classroom support or extra revision material.
+      </div>
+      {% if topic_difficulty %}
+        {% for td in topic_difficulty %}
+          <div class="diff-row">
+            <div class="diff-topic">{{ td.topic }}</div>
+            <div class="diff-bar-wrap">
+              <div class="diff-bar" style="width:{% widthratio td.difficulty_score 100 100 %}%;min-width:6px;"></div>
+            </div>
+            <div class="diff-score">{{ td.difficulty_score }}</div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="empty-msg">No topic difficulty data yet. This will populate after students complete quizzes.</p>
+      {% endif %}
+    </div>
+
+    <div class="card">
+      <h3>School Learning Engagement</h3>
+      <p class="card-sub">Average SmartChat learning sessions per student across the whole school</p>
+      {% if has_engagement %}
+        <div class="engage-val">{{ engagement_score }}</div>
+        <p class="engage-unit">learning sessions per student</p>
+        <p class="engage-note">Average number of SmartChat learning sessions started per student. Higher values indicate stronger curiosity and exploration habits school-wide.</p>
+      {% else %}
+        <p class="empty-msg">No engagement data yet. Sessions will be counted as students start SmartChat conversations.</p>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  {% if has_dimension_data %}
+  const dimDescStrong = {
+    Logic:     "Logic – Problem Solving Strength\nStudents in this school show strong ability in calculations, equations, and formula-based problems. This is a positive indicator for STEM performance.",
+    Systems:   "Systems – Analytical Thinking Strength\nStudents demonstrate strong cause-and-effect reasoning. They are good at understanding how concepts connect and explaining why things happen.",
+    Narrative: "Narrative – Conceptual Understanding Strength\nStudents show strong engagement with theory and concept-based learning. They explore topics actively and understand explanations well.",
+    Spatial:   "Spatial – Learning Consistency Strength\nStudents are practicing regularly, completing daily quizzes, and maintaining streaks — an excellent indicator of study discipline and habit formation.",
+  };
+  const dimDescWeak = {
+    Logic:     "Logic – Problem Solving Needs Improvement\nStudents find calculations and formula-based questions difficult. Adding more practice problems and step-by-step worked examples in class may help.",
+    Systems:   "Systems – Analytical Thinking Needs Improvement\nStudents struggle with reasoning questions. Encouraging 'why' and 'how' discussions in class can help build this analytical skill.",
+    Narrative: "Narrative – Conceptual Understanding Needs Improvement\nStudents may be memorising facts without understanding them. Using real-world analogies and concept maps can deepen understanding.",
+    Spatial:   "Spatial – Learning Consistency Needs Improvement\nStudents are not practicing regularly. Encouraging daily SmartChat sessions and quiz completion habits could significantly improve this area.",
+  };
+
+  const strongest = "{{ strongest_dimension }}";
+  const weakest   = "{{ weakest_dimension }}";
+  const strongDescEl = document.getElementById("strongDesc");
+  const weakDescEl   = document.getElementById("weakDesc");
+  if (strongDescEl) strongDescEl.textContent = dimDescStrong[strongest] || "";
+  if (weakDescEl)   weakDescEl.textContent   = dimDescWeak[weakest]   || "";
+
+  // ── School Intelligence Radar ──
+  new Chart(document.getElementById("schoolRadar"), {
+    type: "radar",
+    data: {
+      labels: ["Logic","Systems","Narrative","Spatial"],
+      datasets: [{
+        label: "School Average",
+        data: [{{ avg_logic }}, {{ avg_systems }}, {{ avg_narrative }}, {{ avg_spatial }}],
+        borderColor: "#1d4ed8",
+        backgroundColor: "rgba(29,78,216,.15)",
+        borderWidth: 2,
+        pointBackgroundColor: "#1d4ed8",
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { r: { beginAtZero: true, ticks: { stepSize: 20 } } },
+      plugins: { legend: { display: false } }
+    }
+  });
+  {% endif %}
+
+  // ── Most Popular Subjects Bar ──
+  {% if subject_engagement %}
+  const palette = ["#3b82f6","#2dd4bf","#fbbf24","#a855f7","#f43f5e","#4ade80","#fb923c"];
+  const subjectData = [
+    {% for s in subject_engagement %}{ subject: "{{ s.subject|escapejs }}", count: {{ s.count }} },{% endfor %}
+  ];
+  new Chart(document.getElementById("subjectBar"), {
+    type: "bar",
+    data: {
+      labels: subjectData.map(s => s.subject),
+      datasets: [{
+        label: "Chat Sessions",
+        data: subjectData.map(s => s.count),
+        backgroundColor: subjectData.map((_,i) => palette[i % palette.length]),
+        borderRadius: 8, borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ` ${c.parsed.y} sessions` } }
+      },
+      scales: {
+        y: { beginAtZero: true, grid: { color: "#f1f5f9" },
+             title: { display: true, text: "Sessions", color: "#64748b", font: { size: 11 } } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+  {% endif %}
+
+});
+</script>
+
+{% endblock %}

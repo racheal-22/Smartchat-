@@ -1,0 +1,954 @@
+{% extends "base_student.html" %}
+
+{% block content %}
+<style>
+
+/* ═══════════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════════ */
+.content-area {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 72px);
+  min-height: 0;
+}
+
+/* ═══════════════════════════════════════════════
+   CHAT HEADER
+═══════════════════════════════════════════════ */
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-shrink: 0;
+}
+.back-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: color 0.15s;
+}
+.back-link:hover { color: var(--accent); }
+.header-sep { width: 1px; height: 16px; background: var(--border); }
+.chat-topic {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+}
+
+/* ═══════════════════════════════════════════════
+   SCROLL AREA
+═══════════════════════════════════════════════ */
+.chat-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px 24px;
+  background: var(--bg2);
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  scroll-behavior: smooth;
+}
+.chat-scroll::-webkit-scrollbar { width: 4px; }
+.chat-scroll::-webkit-scrollbar-track { background: transparent; }
+.chat-scroll::-webkit-scrollbar-thumb { background: #d0dcf7; border-radius: 4px; }
+
+/* ═══════════════════════════════════════════════
+   MESSAGE ROWS
+═══════════════════════════════════════════════ */
+.msg-row {
+  display: flex;
+  margin-bottom: 18px;
+  gap: 10px;
+  animation: msgIn 0.22s ease both;
+}
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.msg-row.user { justify-content: flex-end; }
+.msg-row.bot  { justify-content: flex-start; align-items: flex-start; }
+
+/* ═══════════════════════════════════════════════
+   AVATARS
+═══════════════════════════════════════════════ */
+.msg-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.msg-avatar.ai {
+  background: linear-gradient(135deg, rgba(59,110,248,0.15), rgba(91,140,255,0.1));
+  border: 1px solid rgba(59,110,248,0.22);
+  color: var(--accent);
+  font-size: 13px;
+}
+.msg-avatar.user-av {
+  background: #eef3ff;
+  border: 1px solid var(--border2);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════
+   BUBBLES
+═══════════════════════════════════════════════ */
+.bubble {
+  max-width: 76%;
+  padding: 11px 15px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.msg-row.user .bubble {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 12px 12px 3px 12px;
+  font-weight: 400;
+  box-shadow: 0 3px 12px rgba(59,110,248,0.25);
+}
+.msg-row.bot .bubble {
+  background: transparent;
+  border: none;
+  padding: 0;
+  max-width: 96%;
+}
+.msg-row.bot .bubble.plain-bubble {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 3px 12px 12px 12px;
+  padding: 12px 16px;
+  max-width: 82%;
+}
+
+/* ═══════════════════════════════════════════════
+   TYPING INDICATOR
+═══════════════════════════════════════════════ */
+.typing-bubble {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 3px 12px 12px 12px;
+}
+.typing-bubble span {
+  width: 5px; height: 5px;
+  background: var(--muted);
+  border-radius: 50%;
+  animation: tblink 1.2s infinite;
+}
+.typing-bubble span:nth-child(2) { animation-delay: .2s; }
+.typing-bubble span:nth-child(3) { animation-delay: .4s; }
+@keyframes tblink {
+  0%,80%,100% { opacity:.2; transform:scale(.8); }
+  40%         { opacity:1;  transform:scale(1); }
+}
+.typing-label { font-size: 12px; color: var(--muted); margin-left: 6px; }
+
+/* ═══════════════════════════════════════════════
+   INPUT BAR
+═══════════════════════════════════════════════ */
+.chat-input-wrapper { padding-top: 10px; flex-shrink: 0; }
+.chat-input {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: var(--white);
+  border: 1px solid var(--border2);
+  border-radius: 12px;
+  padding: 6px 6px 6px 16px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.chat-input:focus-within {
+  border-color: rgba(59,110,248,0.45);
+  box-shadow: 0 0 0 3px rgba(59,110,248,0.07);
+}
+.chat-input input {
+  flex: 1; border: none; outline: none;
+  font-size: 14px; font-family: 'Inter', sans-serif;
+  background: transparent; color: var(--ink); padding: 8px 0;
+}
+.chat-input input::placeholder { color: var(--muted); }
+.chat-input button {
+  padding: 9px 20px; border-radius: 8px;
+  background: var(--accent); border: none;
+  color: white; font-weight: 500; font-size: 13px;
+  font-family: 'Inter', sans-serif; cursor: pointer;
+  transition: background 0.15s, transform 0.12s;
+  box-shadow: 0 2px 8px rgba(59,110,248,0.22);
+}
+.chat-input button:hover { background: var(--accent-h); transform: translateY(-1px); }
+
+.mic-btn {
+  flex-shrink: 0; width: 36px; height: 36px;
+  border-radius: 8px; background: transparent;
+  border: 1px solid var(--border2); color: var(--muted);
+  font-size: 16px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  box-shadow: none; padding: 0;
+}
+.mic-btn:hover {
+  background: #eef3ff; color: var(--accent);
+  border-color: rgba(59,110,248,0.35); transform: none; box-shadow: none;
+}
+.mic-btn.listening {
+  background: #fee2e2; border-color: rgba(239,68,68,0.4);
+  color: #ef4444; animation: mic-pulse 1s ease-in-out infinite;
+}
+@keyframes mic-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.3); }
+  50%       { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+}
+
+/* ═══════════════════════════════════════════════
+   NOTE BLOCK — MAGAZINE CARD SYSTEM
+═══════════════════════════════════════════════ */
+.note-block {
+  width: 100%; background: var(--white);
+  border: 1px solid var(--border); border-radius: 18px; overflow: hidden;
+  box-shadow: 0 4px 24px rgba(59,110,248,0.08), 0 1px 4px rgba(0,0,0,0.04);
+  font-size: 14px; line-height: 1.75; color: var(--text);
+}
+.note-banner {
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #3b82f6 100%);
+  padding: 24px 28px 22px;
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+}
+.intro-banner { background: linear-gradient(135deg, #065f46 0%, #059669 60%, #10b981 100%); }
+.note-banner-left { flex: 1; }
+.note-subject-tag {
+  display: inline-block; font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: rgba(255,255,255,0.75); background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 100px;
+  padding: 3px 10px; margin-bottom: 8px;
+}
+.note-title { font-size: 22px; font-weight: 700; color: #fff; margin: 0 0 6px; letter-spacing: -0.4px; line-height: 1.15; }
+.note-grade-tag { font-size: 12px; color: rgba(255,255,255,0.65); margin: 0; font-weight: 400; }
+.note-banner-icon { font-size: 48px; line-height: 1; opacity: 0.85; flex-shrink: 0; }
+.note-section { padding: 20px 28px; border-bottom: 1px solid var(--border); }
+.note-section:last-child { border-bottom: none; }
+.note-section-alt { background: #fafbff; }
+.note-section-label {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--accent); background: rgba(59,110,248,0.07);
+  border: 1px solid rgba(59,110,248,0.14); border-radius: 100px;
+  padding: 4px 12px; margin-bottom: 14px;
+}
+.note-lead { font-size: 15.5px; font-weight: 400; color: var(--ink); line-height: 1.78; margin: 0; }
+.note-section p { font-size: 14px; color: var(--text); line-height: 1.78; margin: 0 0 10px; }
+.note-section p:last-child { margin-bottom: 0; }
+.note-section strong { color: var(--ink); font-weight: 600; }
+.note-formula {
+  margin-top: 16px;
+  background: linear-gradient(135deg, #eef3ff, #f4f8ff);
+  border: 1px solid rgba(59,110,248,0.2); border-left: 4px solid var(--accent);
+  border-radius: 0 12px 12px 0; padding: 14px 18px;
+}
+.note-formula-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+.note-formula-text { font-size: 16px; font-weight: 700; color: var(--ink); letter-spacing: 0.02em; font-family: 'Courier New', monospace; margin-bottom: 6px; }
+.note-formula-explain { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+.note-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.note-list li {
+  display: flex; align-items: flex-start; gap: 12px;
+  font-size: 14px; color: var(--text); line-height: 1.65;
+  padding: 10px 14px; background: var(--white);
+  border: 1px solid var(--border); border-radius: 10px;
+}
+.note-list li::before {
+  content: ''; flex-shrink: 0; width: 7px; height: 7px;
+  border-radius: 50%; background: var(--accent); margin-top: 7px;
+}
+.note-list li strong { color: var(--ink); font-weight: 600; }
+.note-example-card {
+  background: linear-gradient(135deg, #fffbeb, #fef9ec);
+  border: 1px solid rgba(251,191,36,0.3); border-left: 4px solid #f59e0b;
+  border-radius: 0 12px 12px 0; padding: 16px 18px;
+}
+.note-example-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.note-example-emoji { font-size: 22px; }
+.note-example-header strong { font-size: 14px; font-weight: 600; color: var(--ink); }
+.note-example-card p { font-size: 13.5px; color: #78350f; line-height: 1.72; margin: 0 !important; }
+.note-steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; counter-reset: steps; }
+.note-steps li {
+  display: flex; align-items: flex-start; gap: 14px;
+  font-size: 14px; color: var(--text); line-height: 1.65;
+  counter-increment: steps; padding: 12px 14px;
+  background: var(--white); border: 1px solid var(--border); border-radius: 10px;
+}
+.note-steps li::before {
+  content: counter(steps); flex-shrink: 0; width: 24px; height: 24px;
+  background: var(--accent); color: white; border-radius: 50%;
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; margin-top: 0;
+}
+.note-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.note-chip {
+  background: rgba(59,110,248,0.07); border: 1px solid rgba(59,110,248,0.18);
+  color: var(--accent); border-radius: 100px; padding: 5px 14px;
+  font-size: 12.5px; font-weight: 500; transition: background 0.15s;
+}
+.note-chip:hover { background: rgba(59,110,248,0.13); }
+.note-qs { display: flex; flex-direction: column; gap: 10px; }
+.note-q { display: flex; align-items: flex-start; gap: 12px; padding: 13px 16px; border-radius: 11px; border: 1px solid; }
+.note-q-badge { flex-shrink: 0; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 6px; padding: 3px 9px; white-space: nowrap; margin-top: 1px; }
+.note-q-text { font-size: 13.5px; line-height: 1.65; color: var(--text); }
+.note-q-easy { background: #f0fdf4; border-color: rgba(34,197,94,0.2); }
+.note-q-easy .note-q-badge { background: #dcfce7; color: #15803d; }
+.note-q-medium { background: #fff7ed; border-color: rgba(251,146,60,0.25); }
+.note-q-medium .note-q-badge { background: #ffedd5; color: #c2410c; }
+.note-q-hots { background: linear-gradient(135deg, #fdf4ff, #fef3f2); border-color: rgba(168,85,247,0.25); }
+.note-q-hots .note-q-badge { background: #f3e8ff; color: #7e22ce; }
+.note-refs-section { background: #fafbff; }
+.ref-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.ref-link {
+  display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px;
+  background: var(--white); border: 1px solid var(--border2); border-radius: 9px;
+  font-size: 12.5px; font-weight: 500; color: var(--text); text-decoration: none; transition: all 0.15s;
+}
+.ref-link:hover { border-color: rgba(59,110,248,0.4); color: var(--accent); background: rgba(59,110,248,0.04); }
+.ref-icon { font-size: 13px; }
+.note-cta-section { background: rgba(59,110,248,0.03); }
+
+/* ── Solved Examples — numbered steps inside the amber example card ── */
+.note-example-card ol.note-steps { margin-top: 10px; counter-reset: solved-step; }
+.note-example-card ol.note-steps li {
+  counter-increment: solved-step;
+  background: rgba(255,255,255,0.65);
+  border: 1px solid rgba(251,191,36,0.25);
+  border-radius: 8px; padding: 9px 12px;
+}
+.note-example-card ol.note-steps li::before {
+  content: counter(solved-step);
+  background: #f59e0b; color: #fff; width: 20px; height: 20px; font-size: 10px;
+}
+/* Answer line — green highlight */
+.note-example-card ol.note-steps li:last-child {
+  background: linear-gradient(135deg,#f0fdf4,#dcfce7);
+  border-color: rgba(34,197,94,0.3); font-weight: 600;
+}
+.note-example-card ol.note-steps li:last-child::before {
+  content: "✓"; background: #15803d; font-size: 11px;
+}
+.note-cta { font-size: 14.5px; font-weight: 500; color: var(--accent); margin: 0; }
+.note-cta strong { color: var(--ink); }
+
+/* ═══════════════════════════════════════════════
+   QUIZ OVERLAY
+═══════════════════════════════════════════════ */
+.quiz-overlay {
+  position: fixed; inset: 0; background: rgba(15,28,63,0.45);
+  display: flex; justify-content: center; align-items: center;
+  z-index: 9999; backdrop-filter: blur(4px);
+}
+.quiz-modal {
+  width: 62%; max-height: 88vh; background: white; border-radius: 18px;
+  display: flex; flex-direction: column; overflow: hidden;
+  border: 1px solid var(--border2); box-shadow: 0 24px 64px rgba(15,28,63,0.18);
+}
+.quiz-header {
+  padding: 18px 24px; display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, #eef3ff, #f7faff); flex-shrink: 0;
+}
+.quiz-header h2 { font-size: 16px; font-weight: 600; color: var(--ink); margin: 0; }
+.quiz-header-right { display: flex; align-items: center; gap: 10px; }
+.quiz-body { padding: 22px 24px; overflow-y: auto; }
+.question-card { margin-bottom: 20px; padding: 18px 20px; border-radius: 12px; border: 1px solid var(--border); background: #fafcff; }
+.question-title { display: flex; gap: 10px; margin-bottom: 14px; font-size: 14px; font-weight: 600; color: var(--ink); }
+.q-number { color: var(--accent); }
+.q-text { flex: 1; }
+.options { display: flex; flex-direction: column; gap: 8px; }
+.option-item {
+  display: grid; grid-template-columns: 22px 1fr; align-items: start;
+  padding: 11px 14px; border-radius: 9px; border: 1px solid var(--border);
+  background: white; cursor: pointer; column-gap: 10px; transition: all 0.15s;
+}
+.option-item:hover { background: #f0f5ff; border-color: rgba(59,110,248,0.3); }
+.option-item input[type="radio"] { margin-top: 3px; transform: scale(1.1); pointer-events: none; }
+.option-text { font-size: 13.5px; line-height: 1.55; color: var(--text); }
+.option-item:has(input:checked):not(.correct-option):not(.wrong-option) { border-color: var(--accent); background: #eef3ff; }
+.option-item input:disabled { cursor: not-allowed; }
+.correct-option { border-color: #22c55e !important; background: #f0fdf4 !important; }
+.wrong-option   { border-color: #ef4444 !important; background: #fff1f1 !important; }
+.correct-msg { margin-top: 10px; font-size: 13px; color: #16a34a; font-weight: 600; }
+.wrong-msg   { margin-top: 10px; font-size: 13px; color: #dc2626; font-weight: 600; }
+.score-badge { background: var(--accent); color: white; padding: 5px 14px; border-radius: 100px; font-weight: 600; font-size: 13px; }
+.submit-btn {
+  margin-top: 16px; padding: 11px 24px; background: var(--accent); color: white;
+  border: none; border-radius: 9px; font-weight: 500; font-size: 13px;
+  font-family: 'Inter', sans-serif; cursor: pointer;
+  box-shadow: 0 2px 10px rgba(59,110,248,0.22); transition: background 0.15s;
+}
+.submit-btn:hover { background: var(--accent-h); }
+.close-btn {
+  width: 30px; height: 30px; display: flex; justify-content: center; align-items: center;
+  background: #f0f5ff; border-radius: 50%; text-decoration: none; font-size: 14px;
+  color: var(--muted); transition: background 0.15s, color 0.15s;
+}
+.close-btn:hover { background: #e2eaff; color: var(--ink); }
+
+/* ═══════════════════════════════════════════════
+   RICH EXPLANATION CARD
+═══════════════════════════════════════════════ */
+.exp-box { margin-top: 12px; }
+
+.exp-card {
+  border-radius: 12px; overflow: hidden;
+  border: 1px solid rgba(59,110,248,0.15);
+  font-size: 13px; line-height: 1.65;
+}
+
+/* header bar */
+.exp-header {
+  padding: 9px 14px; display: flex; align-items: center; gap: 8px;
+  font-weight: 700; font-size: 12px; letter-spacing: 0.03em;
+}
+.exp-header-correct { background: linear-gradient(135deg,#f0fdf4,#dcfce7); color: #15803d; border-bottom: 1px solid rgba(34,197,94,0.18); }
+.exp-header-wrong   { background: linear-gradient(135deg,#fff1f2,#fee2e2); color: #b91c1c; border-bottom: 1px solid rgba(239,68,68,0.18); }
+
+/* correct answer callout */
+.exp-correct-answer {
+  padding: 8px 14px; background: #f0fdf4;
+  border-bottom: 1px solid rgba(34,197,94,0.15);
+  font-size: 12.5px; color: #166534; font-weight: 600;
+}
+.exp-correct-answer span { font-weight: 800; }
+
+/* steps section */
+.exp-steps-wrap {
+  padding: 12px 14px; background: #f8faff;
+  border-bottom: 1px solid rgba(59,110,248,0.08);
+}
+.exp-section-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.09em;
+  text-transform: uppercase; margin-bottom: 8px;
+}
+.exp-section-label-blue   { color: var(--accent); }
+.exp-section-label-green  { color: #15803d; }
+.exp-section-label-orange { color: #c2410c; }
+
+.exp-steps-ol {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 6px;
+  counter-reset: expstep;
+}
+.exp-steps-ol li {
+  display: flex; align-items: flex-start; gap: 9px;
+  counter-increment: expstep;
+  font-size: 13px; color: #1e293b;
+}
+.exp-steps-ol li::before {
+  content: counter(expstep);
+  flex-shrink: 0; width: 19px; height: 19px;
+  background: var(--accent); color: white; border-radius: 50%;
+  font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; margin-top: 1px;
+}
+.exp-final-answer {
+  margin-top: 8px; padding: 7px 11px;
+  background: rgba(59,110,248,0.07);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 7px 7px 0;
+  font-weight: 700; font-size: 13px; color: #1e293b;
+}
+
+/* why correct */
+.exp-why-correct {
+  padding: 10px 14px; background: #fff;
+  border-bottom: 1px solid rgba(59,110,248,0.07);
+  font-size: 12.5px; color: #374151;
+}
+
+/* why wrong pills */
+.exp-why-wrong {
+  padding: 10px 14px; background: #fffbf7;
+  border-bottom: 1px solid rgba(251,146,60,0.1);
+}
+.exp-wrong-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  margin-bottom: 6px; font-size: 12.5px; color: #374151;
+}
+.exp-wrong-item:last-child { margin-bottom: 0; }
+.exp-wrong-badge {
+  flex-shrink: 0; background: #ffedd5; color: #c2410c;
+  border-radius: 5px; padding: 1px 7px;
+  font-size: 11px; font-weight: 700; margin-top: 1px;
+}
+
+/* keyword chips inside explanation */
+.exp-keywords {
+  padding: 10px 14px; background: #fafbff;
+  border-bottom: 1px solid rgba(59,110,248,0.07);
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+}
+.exp-kw-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin-right: 4px; }
+.exp-kw {
+  background: rgba(59,110,248,0.07); border: 1px solid rgba(59,110,248,0.18);
+  color: var(--accent); border-radius: 100px; padding: 3px 10px;
+  font-size: 11.5px; font-weight: 600;
+}
+
+/* hint row */
+.exp-hint {
+  padding: 9px 14px; background: #fffbeb;
+  border-bottom: 1px solid rgba(251,191,36,0.2);
+  display: flex; align-items: flex-start; gap: 9px;
+  font-size: 12.5px; color: #374151;
+}
+.exp-hint-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.exp-hint strong { color: #92400e; }
+
+/* plain text paragraphs inside exp sections */
+.exp-plain-text {
+  margin: 0; font-size: 13px; color: #1e293b; line-height: 1.7;
+}
+
+/* study nudge */
+.exp-nudge {
+  padding: 9px 14px;
+  background: linear-gradient(135deg,#fafbff,#f0f5ff);
+  display: flex; align-items: flex-start; gap: 9px;
+  font-size: 12px; color: #374151;
+}
+.exp-nudge-icon { font-size: 15px; flex-shrink: 0; margin-top: 1px; }
+.exp-nudge em { font-style: normal; font-weight: 700; color: var(--accent); }
+
+/* ═══════════════════════════════════════════════
+   QUIZ GENERATE LOADING OVERLAY
+═══════════════════════════════════════════════ */
+.quiz-gen-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(15,28,63,0.4); backdrop-filter: blur(5px);
+  z-index: 9998; align-items: center; justify-content: center;
+}
+.quiz-gen-card {
+  background: white; border: 1px solid var(--border2); border-radius: 20px;
+  padding: 44px 52px; text-align: center;
+  box-shadow: 0 24px 64px rgba(15,28,63,0.14); max-width: 340px; width: 90%;
+}
+.quiz-gen-dots { display: flex; justify-content: center; gap: 8px; margin-bottom: 24px; }
+.quiz-dot {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--accent); animation: qdot 1.1s ease-in-out infinite; opacity: 0.3;
+}
+.quiz-dot:nth-child(2) { animation-delay: .18s; }
+.quiz-dot:nth-child(3) { animation-delay: .36s; }
+@keyframes qdot {
+  0%,100% { transform: scale(0.6); opacity: 0.2; }
+  50%     { transform: scale(1.2); opacity: 1; }
+}
+.quiz-gen-title { font-size: 15px; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+.quiz-gen-sub { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+</style>
+
+
+<!-- PAGE HEADER -->
+<div class="chat-header">
+  <a href="{% url 'chat_home' %}" class="back-link">← Sessions</a>
+  <div class="header-sep"></div>
+  <span class="chat-topic">{{ session.topic }}</span>
+</div>
+
+
+<!-- CHAT AREA -->
+<div class="content-area">
+
+  <div id="chat-window" class="chat-scroll">
+    {% for msg in messages %}
+      {% if msg.role == "user" %}
+        <div class="msg-row user">
+          <div class="bubble">{{ msg.content }}</div>
+          <div class="msg-avatar user-av">{{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}</div>
+        </div>
+      {% else %}
+        <div class="msg-row bot">
+          <div class="msg-avatar ai">✦</div>
+          <div class="bubble" id="bubble-{{ forloop.counter }}">
+            <div class="bot-content">{{ msg.content|safe }}</div>
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+
+    <div id="ai-loading" class="msg-row bot" style="display:none;">
+      <div class="msg-avatar ai">✦</div>
+      <div class="bubble plain-bubble">
+        <div class="typing-bubble">
+          <span></span><span></span><span></span>
+          <span class="typing-label">SmartChat is thinking…</span>
+        </div>
+      </div>
+    </div>
+
+    <div id="chat-end"></div>
+  </div>
+
+  <div class="chat-input-wrapper">
+    <form method="POST" class="chat-input" id="chat-form">
+      {% csrf_token %}
+      <button type="button" id="mic-btn" class="mic-btn" title="Speak your message">🎤</button>
+      <input type="text" id="msg-input" name="message"
+             placeholder="Ask anything about {{ session.topic }}…"
+             autocomplete="off" required>
+      <button type="submit">Ask ↑</button>
+    </form>
+  </div>
+
+</div>
+
+
+<!-- ── QUIZ MODAL ── -->
+{% if quiz_session %}
+<div class="quiz-overlay">
+  <div class="quiz-modal">
+
+    <div class="quiz-header">
+      <h2>🧠 Test Yourself</h2>
+      <div class="quiz-header-right">
+        {% if quiz_session.completed %}
+          <div class="score-badge">{{ quiz_session.score }}/{{ quiz_session.total_questions }}</div>
+        {% endif %}
+        <a href="/chat/{{ session.id }}/" class="close-btn">✕</a>
+      </div>
+    </div>
+
+    <div class="quiz-body">
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="quiz_id" value="{{ quiz_session.id }}">
+
+        {% for question in quiz_session.questions.all %}
+        <div class="question-card">
+          <div class="question-title">
+            <span class="q-number">Q{{ forloop.counter }}</span>
+            <span class="q-text">{{ question.question_text }}</span>
+          </div>
+
+          <div class="options">
+            {% for letter, text in question.options_display %}
+              <label class="option-item
+                {% if quiz_session.completed %}
+                  {% if question.correct_answer == letter %}correct-option{% endif %}
+                  {% if question.selected_answer == letter and not question.is_correct %}wrong-option{% endif %}
+                {% endif %}">
+                <input type="radio"
+                       name="question_{{ question.id }}"
+                       value="{{ letter }}"
+                       {% if question.selected_answer == letter %}checked{% endif %}
+                       {% if quiz_session.completed %}disabled{% endif %}>
+                <span class="option-text">{{ text }}</span>
+              </label>
+            {% empty %}
+              <label class="option-item {% if quiz_session.completed %}{% if question.correct_answer == 'A' %}correct-option{% endif %}{% if question.selected_answer == 'A' and not question.is_correct %}wrong-option{% endif %}{% endif %}">
+                <input type="radio" name="question_{{ question.id }}" value="A" {% if question.selected_answer == "A" %}checked{% endif %} {% if quiz_session.completed %}disabled{% endif %}>
+                <span class="option-text">{{ question.option_a }}</span>
+              </label>
+              <label class="option-item {% if quiz_session.completed %}{% if question.correct_answer == 'B' %}correct-option{% endif %}{% if question.selected_answer == 'B' and not question.is_correct %}wrong-option{% endif %}{% endif %}">
+                <input type="radio" name="question_{{ question.id }}" value="B" {% if question.selected_answer == "B" %}checked{% endif %} {% if quiz_session.completed %}disabled{% endif %}>
+                <span class="option-text">{{ question.option_b }}</span>
+              </label>
+              <label class="option-item {% if quiz_session.completed %}{% if question.correct_answer == 'C' %}correct-option{% endif %}{% if question.selected_answer == 'C' and not question.is_correct %}wrong-option{% endif %}{% endif %}">
+                <input type="radio" name="question_{{ question.id }}" value="C" {% if question.selected_answer == "C" %}checked{% endif %} {% if quiz_session.completed %}disabled{% endif %}>
+                <span class="option-text">{{ question.option_c }}</span>
+              </label>
+              <label class="option-item {% if quiz_session.completed %}{% if question.correct_answer == 'D' %}correct-option{% endif %}{% if question.selected_answer == 'D' and not question.is_correct %}wrong-option{% endif %}{% endif %}">
+                <input type="radio" name="question_{{ question.id }}" value="D" {% if question.selected_answer == "D" %}checked{% endif %} {% if quiz_session.completed %}disabled{% endif %}>
+                <span class="option-text">{{ question.option_d }}</span>
+              </label>
+            {% endfor %}
+          </div>
+
+          {% if quiz_session.completed %}
+            {% if question.is_correct %}
+              <div class="correct-msg">✓ Correct! Great work.</div>
+            {% else %}
+              <div class="wrong-msg">✕ Not quite — here's what you needed to know:</div>
+            {% endif %}
+            <div class="exp-box"
+                 data-correct="{{ question.is_correct|yesno:'true,false' }}"
+                 data-correct-answer="{{ question.correct_answer }}"
+                 data-id="exp-{{ question.id }}"></div>
+            <script type="application/json" id="exp-{{ question.id }}">{{ question.explanation|safe }}</script>
+          {% endif %}
+        </div>
+        {% endfor %}
+
+        {% if not quiz_session.completed %}
+          <button type="submit" name="submit_quiz" class="submit-btn">Submit Answers →</button>
+        {% endif %}
+      </form>
+    </div>
+
+  </div>
+</div>
+{% endif %}
+
+
+<script>
+/* ── Auto-scroll ── */
+(function () {
+  var end = document.getElementById("chat-end");
+  if (end) end.scrollIntoView({ block: "end" });
+}());
+
+/* ── Plain-bubble for non-note bot messages ── */
+(function () {
+  document.querySelectorAll(".msg-row.bot .bubble").forEach(function (bubble) {
+    if (!bubble.querySelector(".note-block")) bubble.classList.add("plain-bubble");
+  });
+}());
+
+/* ── Enter key submits ── */
+document.getElementById("msg-input").addEventListener("keydown", function (e) {
+  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); document.getElementById("chat-form").submit(); }
+});
+
+/* ── Typing indicator ── */
+var chatForm = document.getElementById("chat-form");
+var aiLoader = document.getElementById("ai-loading");
+var msgInput = document.getElementById("msg-input");
+function showLoader() {
+  if (!msgInput.value.trim()) return;
+  aiLoader.style.display = "flex";
+  aiLoader.scrollIntoView({ behavior: "smooth" });
+}
+chatForm.querySelector("button[type=submit]").addEventListener("click", showLoader);
+msgInput.addEventListener("keydown", function (e) { if (e.key === "Enter" && !e.shiftKey) showLoader(); });
+
+/* ── Quiz generate overlay ── */
+var testForm = document.getElementById("test-me-form");
+if (testForm) {
+  testForm.addEventListener("submit", function () {
+    var overlay = document.getElementById("quiz-gen-overlay");
+    if (overlay) overlay.style.display = "flex";
+    var btn = document.getElementById("test-me-btn");
+    if (btn) { btn.disabled = true; btn.textContent = "Generating…"; }
+  });
+}
+
+/* ── Microphone Speech-to-Text ── */
+(function () {
+  var micBtn = document.getElementById("mic-btn");
+  if (!micBtn) return;
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { micBtn.style.opacity = "0.4"; micBtn.style.cursor = "not-allowed"; return; }
+  var recognition = new SR();
+  recognition.lang = "en-IN";
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+  var listening = false;
+  micBtn.addEventListener("click", function () { listening ? recognition.stop() : recognition.start(); });
+  recognition.addEventListener("start", function () { listening = true; micBtn.classList.add("listening"); });
+  recognition.addEventListener("end",   function () { listening = false; micBtn.classList.remove("listening"); });
+  recognition.addEventListener("result", function (e) {
+    var input = document.getElementById("msg-input");
+    if (input) { input.value = e.results[0][0].transcript; input.focus(); }
+  });
+  recognition.addEventListener("error", function () { listening = false; micBtn.classList.remove("listening"); });
+}());
+
+
+/* ══════════════════════════════════════════════════════════════
+   RICH EXPLANATION RENDERER
+   Uses Django json_script to safely embed explanation JSON.
+   Parses it once and builds a card that teaches like a teacher:
+     • what the correct answer actually is
+     • step-by-step working (for maths)
+     • plain-English "why" for theory
+     • why every wrong option is wrong (labelled A/B/C/D)
+     • 2-3 key terms to look up
+     • a friendly nudge to explore further
+══════════════════════════════════════════════════════════════ */
+document.addEventListener("DOMContentLoaded", function renderExplanations() {
+
+  function esc(str) {
+    return String(str || "")
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  document.querySelectorAll(".exp-box[data-id]").forEach(function (box) {
+    var isCorrect     = box.dataset.correct === "true";
+    var correctLetter = box.dataset.correctAnswer || "";
+
+    /* Read from the paired <script type="application/json"> tag.
+       This avoids ALL HTML-attribute encoding issues — the browser
+       delivers the raw text content without any quote mangling.      */
+    var scriptEl = document.getElementById(box.dataset.id);
+    var rawStr   = scriptEl ? scriptEl.textContent : "";
+
+    var data = {};
+    try {
+      var parsed = JSON.parse(rawStr);
+      /* Guard against legacy double-encoded strings */
+      data = (typeof parsed === "string") ? JSON.parse(parsed) : parsed;
+    } catch(e) {
+      /* Absolute fallback: show raw text as solution */
+      data = { solution: rawStr.replace(/<[^>]+>/g,"").trim(), why_correct: "", why_wrong: {}, hint: "" };
+    }
+
+    var solution   = data.solution    || "";
+    var whyCorrect = data.why_correct || "";
+    var whyWrong   = (data.why_wrong && typeof data.why_wrong === "object") ? data.why_wrong : {};
+    var hint       = data.hint || "";
+
+    var html = '<div class="exp-card">';
+
+    /* ══ 1. HEADER ══════════════════════════════════════════ */
+    html += isCorrect
+      ? '<div class="exp-header exp-header-correct">✅ Correct! Here\'s why that answer works</div>'
+      : '<div class="exp-header exp-header-wrong">❌ Not quite — let\'s work through this together</div>';
+
+    /* ══ 2. CORRECT ANSWER CALLOUT ══════════════════════════ */
+    if (correctLetter) {
+      html += '<div class="exp-correct-answer">'
+            + '✔ The right answer was <span>Option ' + esc(correctLetter) + '</span>' + '</div>';
+    }
+
+    /* ══ 3. HINT (shown only on wrong answer) ═══════════════ */
+    if (!isCorrect && hint) {
+      html += '<div class="exp-hint">'
+            + '<span class="exp-hint-icon">💬</span>'
+            + '<span><strong>Think about it:</strong> ' + esc(hint) + '</span>'
+            + '</div>';
+    }
+
+    /* ══ 4. STEP-BY-STEP (maths) or EXPLANATION (theory) ═══ */
+    if (solution && typeof solution === "object") {
+      /* Structured steps dict */
+      var steps = [];
+      ["step1","step2","step3","step4"].forEach(function(k){
+        if (solution[k]) steps.push(solution[k]);
+      });
+      if (steps.length) {
+        html += '<div class="exp-steps-wrap">'
+              + '<div class="exp-section-label exp-section-label-blue">🧮 Working it out — step by step</div>'
+              + '<ol class="exp-steps-ol">';
+        steps.forEach(function(s){ html += '<li>' + esc(s) + '</li>'; });
+        html += '</ol>';
+        if (solution.final_answer) {
+          html += '<div class="exp-final-answer">✔ Final Answer: ' + esc(solution.final_answer) + '</div>';
+        }
+        html += '</div>';
+      }
+    } else if (typeof solution === "string" && solution.trim()) {
+      /* Plain-text explanation */
+      html += '<div class="exp-steps-wrap">'
+            + '<div class="exp-section-label exp-section-label-blue">💡 Here\'s the full explanation</div>'
+            + '<p class="exp-plain-text">' + esc(solution) + '</p>'
+            + '</div>';
+    }
+
+    /* ══ 5. WHY THE CORRECT ANSWER IS RIGHT ═════════════════ */
+    if (whyCorrect) {
+      html += '<div class="exp-why-correct">'
+            + '<div class="exp-section-label exp-section-label-green">✅ Why Option ' + esc(correctLetter) + ' is correct</div>'
+            + '<p class="exp-plain-text">' + esc(whyCorrect) + '</p>'
+            + '</div>';
+    }
+
+    /* ══ 6. WHY WRONG OPTIONS ARE WRONG ════════════════════ */
+    var wrongKeys = Object.keys(whyWrong).filter(function(k){ return k !== correctLetter; });
+    if (wrongKeys.length) {
+      html += '<div class="exp-why-wrong">'
+            + '<div class="exp-section-label exp-section-label-orange">🚫 Why the other options don\'t work</div>';
+      wrongKeys.forEach(function(k){
+        html += '<div class="exp-wrong-item">'
+              + '<span class="exp-wrong-badge">Option ' + esc(k) + '</span>'
+              + '<span>' + esc(whyWrong[k]) + '</span>'
+              + '</div>';
+      });
+      html += '</div>';
+    }
+
+    /* ══ 7. STUDY NUDGE ════════════════════════════════════ */
+    html += '<div class="exp-nudge">'
+          + '<span class="exp-nudge-icon">📖</span>'
+          + '<div>'
+          + '<strong>Want to understand this better?</strong><br>'
+          + 'Ask SmartChat about this topic or look it up in your NCERT textbook. '
+          + 'The more you explore, the stronger your understanding becomes!'
+          + '</div>'
+          + '</div>';
+
+    html += '</div>'; /* close exp-card */
+    box.innerHTML = html;
+  });
+
+});
+</script>
+
+{% endblock %}
+
+
+{% block right_panel %}
+<div class="right-panel">
+
+  <div style="margin-bottom:16px;">
+    <div class="section-label">Session Notes</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:2px;">Your private notes for this session</div>
+  </div>
+
+  <form method="POST" action="{% url 'save_note' session.id %}">
+    {% csrf_token %}
+    <textarea name="content"
+      style="height:340px;resize:none;font-size:13px;line-height:1.65;color:var(--text);"
+      placeholder="Jot down important points…">{{ note.content }}</textarea>
+    <button type="submit" class="btn" style="width:100%;margin-top:6px;">💾 Save Notes</button>
+  </form>
+
+  <div style="height:1px;background:var(--border);margin:18px 0;"></div>
+
+  <form method="POST" id="test-me-form">
+    {% csrf_token %}
+    <button type="submit" name="test_me" id="test-me-btn"
+      style="width:100%;padding:12px;
+             background:linear-gradient(135deg,#f0fdf4,#dcfce7);
+             color:#15803d;border:1px solid rgba(34,197,94,0.28);
+             border-radius:10px;font-weight:600;font-size:13.5px;
+             font-family:'Inter',sans-serif;cursor:pointer;
+             transition:all 0.15s;box-shadow:0 2px 8px rgba(34,197,94,0.12);">
+      🎯 Test Me on This Topic
+    </button>
+  </form>
+
+  <div style="height:1px;background:var(--border);margin:18px 0;"></div>
+
+  <div style="font-size:11px;color:var(--muted);line-height:1.6;text-align:center;padding:0 4px;">
+    🔒 <strong>Safe Learning Environment</strong><br>
+    All content is NCERT-aligned and<br>reviewed for school-age students.
+  </div>
+
+</div>
+
+<!-- QUIZ GENERATE LOADING OVERLAY -->
+<div id="quiz-gen-overlay" class="quiz-gen-overlay">
+  <div class="quiz-gen-card">
+    <div class="quiz-gen-dots">
+      <div class="quiz-dot"></div><div class="quiz-dot"></div><div class="quiz-dot"></div>
+    </div>
+    <div class="quiz-gen-title">Generating your quiz…</div>
+    <div class="quiz-gen-sub">AI is reading your session<br>and crafting smart questions.</div>
+  </div>
+</div>
+
+{% endblock %}

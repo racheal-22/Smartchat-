@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teacher Sign Up</title>
+    <style>
+        body {
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            height:100vh;
+            margin:0;
+            font-family:Segoe UI;
+            background:linear-gradient(135deg,#eef2ff,#ffffff);
+        }
+
+        .box {
+            background:white;
+            border:1px solid #e6ecff;
+            padding:40px;
+            border-radius:16px;
+            width:380px;
+            box-shadow:0 10px 25px rgba(0,0,0,0.05);
+        }
+
+        h2 {
+            text-align:center;
+            color:#4338ca;
+            margin-bottom:25px;
+        }
+
+        input {
+            width:100%;
+            padding:12px;
+            margin-bottom:14px;
+            border:1px solid #c7dbff;
+            border-radius:8px;
+            font-size:14px;
+        }
+
+        button {
+            width:100%;
+            padding:12px;
+            background:#4338ca;
+            color:white;
+            border:none;
+            border-radius:8px;
+            font-weight:600;
+            cursor:pointer;
+        }
+
+        button:hover {
+            background:#3730a3;
+        }
+
+        .link {
+            text-align:center;
+            margin-top:15px;
+        }
+
+        .link a {
+            color:#4338ca;
+            text-decoration:none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h2>Teacher Registration</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <input type="text" name="full_name" placeholder="Full Name" required>
+        <input type="text" name="school_name" placeholder="School Name" required>
+        <input type="text" name="username" placeholder="Username" required>
+        <input type="password" name="password" placeholder="Password" required>
+
+        <button type="submit">Create Teacher Account</button>
+    </form>
+
+    <div class="link">
+        Already registered? <a href="{% url 'login' %}">Login</a>
+    </div>
+</div>
+
+</body>
+</html>

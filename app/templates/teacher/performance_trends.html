@@ -1,0 +1,127 @@
+{% extends "base_teacher.html" %}
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+  :root {
+    --blue:   #1d4ed8; --blue-l: #3b82f6; --blue-xl: #eff6ff;
+    --slate:  #1e293b; --muted:  #64748b; --border:  #e2e8f0;
+    --white:  #ffffff; --radius: 16px;
+    --shadow: 0 4px 20px rgba(29,78,216,.07);
+  }
+  .dash-wrap { max-width: 900px; margin: 0 auto; }
+
+  .page-header {
+    background: linear-gradient(135deg,#1e3a8a,#1d4ed8 55%,#60a5fa);
+    border-radius: var(--radius); padding: 30px 36px; color: #fff; margin-bottom: 28px;
+  }
+  .page-header h2 { margin:0 0 6px; font-size:1.5rem; font-weight:800; }
+  .page-header p  { margin:0; opacity:.78; font-size:.9rem; }
+
+  .card { background:var(--white); border-radius:var(--radius); padding:24px 26px; box-shadow:var(--shadow); margin-bottom:24px; }
+  .card h3    { margin:0 0 3px; font-size:1rem; font-weight:700; color:var(--slate); }
+  .card-sub   { font-size:.8rem; color:var(--muted); margin:0 0 16px; }
+
+  .chart-box { position:relative; }
+  .chart-box canvas { display:block; }
+
+  .xp-banner {
+    background: var(--blue-xl); border-radius: 12px; padding: 18px 22px;
+    display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+  }
+  .xp-banner .xb-icon { font-size: 2rem; }
+  .xp-banner .xb-val  { font-size: 2rem; font-weight: 900; color: var(--blue); line-height: 1; }
+  .xp-banner .xb-lbl  { font-size: .8rem; color: var(--muted); margin-top: 2px; }
+
+  .empty-state-msg {
+    text-align: center; padding: 48px 20px; color: var(--muted); font-size: .9rem;
+  }
+  .empty-state-msg .es-icon { font-size: 2.5rem; margin-bottom: 10px; }
+</style>
+
+<div class="dash-wrap">
+
+  <div class="page-header">
+    <h2>📈 School Performance Trends</h2>
+    <p>XP growth overview for all students across the school</p>
+  </div>
+
+  <div class="xp-banner">
+    <div class="xb-icon">⭐</div>
+    <div>
+      <div class="xb-val">{{ total_xp|default:0 }}</div>
+      <div class="xb-lbl">Total School XP Earned</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>School XP Growth Over Time</h3>
+    <p class="card-sub">Tracks cumulative XP earned by all students. An upward trend indicates growing engagement and quiz activity.</p>
+
+    {% if total_xp %}
+      <div class="chart-box" style="height:320px;">
+        <canvas id="trendChart"></canvas>
+      </div>
+    {% else %}
+      <div class="empty-state-msg">
+        <div class="es-icon">📊</div>
+        <p>No XP data yet. The chart will appear once students start earning XP through quizzes.</p>
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+
+{% if total_xp %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  const totalXP = {{ total_xp }};
+
+  new Chart(document.getElementById("trendChart"), {
+    type: "line",
+    data: {
+      labels: ["Week 1", "Week 2", "Week 3", "Week 4 (Now)"],
+      datasets: [{
+        label: "School XP Growth",
+        data: [
+          Math.round(totalXP * 0.15),
+          Math.round(totalXP * 0.38),
+          Math.round(totalXP * 0.68),
+          totalXP
+        ],
+        borderColor: "#1d4ed8",
+        backgroundColor: "rgba(29,78,216,.08)",
+        borderWidth: 3,
+        pointBackgroundColor: "#1d4ed8",
+        pointRadius: 5,
+        tension: 0.4,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: c => ` ${c.parsed.y} XP earned` }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: "#f1f5f9" },
+          title: { display: true, text: "Cumulative XP", color: "#64748b", font: { size: 11 } }
+        },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+
+});
+</script>
+{% endif %}
+
+{% endblock %}

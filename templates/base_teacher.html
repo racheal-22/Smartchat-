@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Teacher Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #3730a3;
+            --danger: #ef4444;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+
+            /* Tokens used by analytics templates */
+            --muted:     #64748b;
+            --white:     #ffffff;
+            --border:    #e2e8f0;
+            --border2:   #e2e8f0;
+            --bg2:       #f1f5f9;
+            --ink:       #0f172a;
+            --text:      #334155;
+            --accent:    #4338ca;
+            --accent-h:  #3730a3;
+            --slate:     #1e293b;
+            --radius:    16px;
+            --shadow:    0 4px 20px rgba(0,0,0,.06);
+            --indigo:    #4338ca;
+            --indigo-l:  #6366f1;
+            --indigo-xl: #eef2ff;
+            --blue:      #1d4ed8;
+            --blue-l:    #3b82f6;
+            --blue-xl:   #eff6ff;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f1f5f9, #eef2ff);
+            color: var(--text-main);
+        }
+
+        /* ── Outer shell: sidebar + content area ── */
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* ── SIDEBAR ── */
+        .sidebar {
+            width: 270px;
+            flex-shrink: 0;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid #e2e8f0;
+            padding: 30px 22px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin-bottom: 30px;
+        }
+        .logo-circle {
+            width: 50px; height: 50px; border-radius: 14px;
+            background: linear-gradient(135deg, var(--primary), #6366f1);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 22px; font-weight: bold;
+            box-shadow: 0 10px 25px rgba(79,70,229,0.3);
+            flex-shrink: 0;
+        }
+        .header-text h2 { margin: 0; font-size: 18px; font-weight: 700; }
+        .role-badge {
+            display: inline-block; margin-top: 5px;
+            font-size: 12px; padding: 4px 10px; border-radius: 20px;
+            background: #eef2ff; color: var(--primary); font-weight: 600;
+        }
+        .sidebar-divider { border: none; border-top: 1px solid #e2e8f0; margin-bottom: 25px; }
+
+        .sidebar a {
+            display: block; padding: 12px 16px; border-radius: 12px;
+            margin-bottom: 6px; text-decoration: none;
+            color: var(--text-muted); font-size: 14px; font-weight: 500;
+            transition: 0.2s ease;
+        }
+        .sidebar a:hover { background: #eef2ff; color: var(--primary); transform: translateX(4px); }
+        .sidebar a.active { background: var(--primary); color: white; }
+
+        .sidebar-nav { flex: 1; }
+
+        .logout-btn {
+            margin-top: auto;
+            padding: 12px 16px; border-radius: 12px;
+            text-decoration: none; font-size: 14px; text-align: center;
+            background: #fee2e2; color: var(--danger); font-weight: 600;
+            transition: 0.2s ease; display: block;
+        }
+        .logout-btn:hover { background: var(--danger); color: white; transform: translateY(-2px); }
+
+        /* ── Content wrapper: main + optional right panel ── */
+        .content-wrapper {
+            flex: 1;
+            display: flex;
+            min-width: 0;
+        }
+
+        /* ── MAIN ── */
+        .main {
+            flex: 1;
+            padding: 28px 32px;
+            overflow-y: auto;
+            min-height: 100vh;
+            min-width: 0;
+        }
+
+        /* ── RIGHT PANEL (optional — injected by chat templates) ── */
+        .right-panel {
+            width: 260px;
+            flex-shrink: 0;
+            background: rgba(255,255,255,0.9);
+            border-left: 1px solid #e2e8f0;
+            padding: 24px 18px;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .right-panel textarea {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-family: 'Inter', sans-serif;
+            outline: none;
+            resize: none;
+            transition: border-color 0.15s;
+        }
+        .right-panel textarea:focus { border-color: rgba(67,56,202,0.4); }
+        .right-panel .btn {
+            background: var(--primary); color: white;
+            padding: 10px 18px; border-radius: 10px;
+            text-decoration: none; border: none;
+            cursor: pointer; font-weight: 500;
+            font-family: 'Inter', sans-serif;
+            transition: 0.2s ease; font-size: 13px;
+        }
+        .right-panel .btn:hover { background: var(--primary-dark); }
+        .section-label {
+            font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            color: var(--muted);
+        }
+
+        /* ── Card base ── */
+        .card {
+            background: var(--card-bg); border-radius: 18px;
+            padding: 28px; margin-bottom: 25px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+            transition: 0.2s ease;
+        }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 20px 40px rgba(0,0,0,0.08); }
+
+        /* Prevent card hover interfering with analytics dash */
+        .dash-wrap .card:hover { transform: none; box-shadow: 0 4px 20px rgba(0,0,0,.06); }
+
+        .btn {
+            background: var(--primary); color: white;
+            padding: 10px 18px; border-radius: 10px;
+            text-decoration: none; border: none;
+            cursor: pointer; font-weight: 500; transition: 0.2s ease;
+        }
+        .btn:hover { background: var(--primary-dark); }
+
+        /* Give charts room */
+        .chart-box { overflow: hidden; }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .layout { flex-direction: column; }
+            .sidebar { width: 100%; height: auto; position: relative; }
+            .main { padding: 20px; }
+            .right-panel { width: 100%; height: auto; position: relative; border-left: none; border-top: 1px solid #e2e8f0; }
+        }
+    </style>
+</head>
+
+<body>
+<div class="layout">
+
+    <!-- ── SIDEBAR ── -->
+    <div class="sidebar">
+
+        <div class="sidebar-header">
+            <div class="logo-circle">🎓</div>
+            <div class="header-text">
+                <h2>SmartChat</h2>
+                <span class="role-badge">{{ request.user.role|title }}</span>
+            </div>
+        </div>
+
+        <hr class="sidebar-divider">
+
+        <div class="sidebar-nav">
+            <a href="{% url 'teacher_school_dashboard' %}">🏫 School Overview</a>
+            <a href="{% url 'teacher_dashboard' %}">📊 Class Analytics</a>
+            <a href="{% url 'teacher_trends' %}">📈 Performance Trends</a>
+            <a href="{% url 'teacher_chat_home' %}" style="
+                background: linear-gradient(135deg, #eef2ff, #e0e7ff);
+                color: var(--primary);
+                font-weight: 600;
+                border: 1px solid rgba(79,70,229,0.2);
+            ">🤖 AI Teaching Assistant</a>
+        </div>
+
+        <a href="{% url 'logout' %}" class="logout-btn">Logout</a>
+    </div>
+
+    <!-- ── CONTENT WRAPPER ── -->
+    <div class="content-wrapper">
+
+        <!-- MAIN -->
+        <div class="main">
+            {% block topbar %}{% endblock %}
+            {% block content %}{% endblock %}
+        </div>
+
+        <!-- RIGHT PANEL — only rendered when a template fills this block -->
+        {% block right_panel %}{% endblock %}
+
+    </div>
+
+</div>
+</body>
+</html>

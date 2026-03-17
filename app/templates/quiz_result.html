@@ -1,0 +1,251 @@
+{% extends "base_student.html" %}
+{% block content %}
+
+<style>
+:root {
+  --indigo: #4338ca; --indigo-l: #6366f1; --indigo-xl: #eef2ff;
+  --slate: #1e293b; --muted: #64748b; --border: #e2e8f0;
+  --white: #fff; --radius: 16px; --shadow: 0 4px 20px rgba(67,56,202,.08);
+}
+.result-wrap { max-width: 720px; margin: 0 auto; }
+
+/* Score hero */
+.score-hero {
+  border-radius: var(--radius); padding: 32px 36px; color: #fff;
+  margin-bottom: 28px; text-align: center;
+}
+.score-hero.great  { background: linear-gradient(135deg,#15803d,#22c55e); }
+.score-hero.good   { background: linear-gradient(135deg,#b45309,#f59e0b); }
+.score-hero.try    { background: linear-gradient(135deg,#b91c1c,#ef4444); }
+
+.score-emoji   { font-size: 3rem; margin-bottom: 10px; }
+.score-big     { font-size: 4rem; font-weight: 900; line-height: 1; }
+.score-label   { font-size: 1rem; opacity: .82; margin: 6px 0 0; }
+.score-xp      { margin-top: 14px; display: inline-block; background: rgba(255,255,255,.2); border-radius: 100px; padding: 6px 18px; font-size: .9rem; font-weight: 700; }
+.score-msg     { margin-top: 10px; font-size: .88rem; opacity: .8; }
+
+/* Question review */
+.q-review {
+  background: var(--white); border-radius: var(--radius);
+  padding: 24px 28px; box-shadow: var(--shadow);
+  margin-bottom: 18px; border: 1px solid var(--border);
+}
+.q-review-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.q-status-badge {
+  padding: 4px 12px; border-radius: 100px; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .05em; flex-shrink: 0;
+}
+.badge-correct { background: #dcfce7; color: #15803d; }
+.badge-wrong   { background: #fee2e2; color: #b91c1c; }
+.q-review-text { font-size: .95rem; font-weight: 600; color: var(--slate); flex: 1; }
+
+/* Option pills */
+.options-review { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+.opt-pill {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  border-radius: 10px; border: 2px solid var(--border); font-size: .88rem;
+}
+.opt-pill .pill-letter {
+  width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 11px;
+  background: var(--border); color: var(--muted);
+}
+.opt-pill.is-correct  { border-color: #22c55e; background: #f0fdf4; }
+.opt-pill.is-correct .pill-letter { background: #22c55e; color: #fff; }
+.opt-pill.was-selected:not(.is-correct) { border-color: #ef4444; background: #fff1f2; }
+.opt-pill.was-selected:not(.is-correct) .pill-letter { background: #ef4444; color: #fff; }
+
+/* Explanation card */
+.exp-card {
+  border-radius: 12px; overflow: hidden; border: 1px solid rgba(67,56,202,.15);
+  font-size: 13px; line-height: 1.65; margin-top: 14px;
+}
+.exp-header { padding: 9px 14px; display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 12px; }
+.exp-header-correct { background: linear-gradient(135deg,#f0fdf4,#dcfce7); color: #15803d; border-bottom: 1px solid rgba(34,197,94,.18); }
+.exp-header-wrong   { background: linear-gradient(135deg,#fff1f2,#fee2e2); color: #b91c1c; border-bottom: 1px solid rgba(239,68,68,.18); }
+.exp-correct-answer { padding: 8px 14px; background: #f0fdf4; border-bottom: 1px solid rgba(34,197,94,.15); font-size: 12.5px; color: #166534; font-weight: 600; }
+.exp-correct-answer span { font-weight: 800; }
+.exp-hint { padding: 9px 14px; background: #fffbeb; border-bottom: 1px solid rgba(251,191,36,.2); display: flex; align-items: flex-start; gap: 9px; font-size: 12.5px; color: #374151; }
+.exp-hint strong { color: #92400e; }
+.exp-steps-wrap { padding: 12px 14px; background: #f8faff; border-bottom: 1px solid rgba(67,56,202,.08); }
+.exp-section-label { font-size: 10px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; margin-bottom: 8px; }
+.exp-section-label-blue   { color: var(--indigo); }
+.exp-section-label-green  { color: #15803d; }
+.exp-section-label-orange { color: #c2410c; }
+.exp-steps-ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; counter-reset: expstep; }
+.exp-steps-ol li { display: flex; align-items: flex-start; gap: 9px; counter-increment: expstep; font-size: 13px; color: #1e293b; }
+.exp-steps-ol li::before { content: counter(expstep); flex-shrink: 0; width: 19px; height: 19px; background: var(--indigo); color: white; border-radius: 50%; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+.exp-final-answer { margin-top: 8px; padding: 7px 11px; background: rgba(67,56,202,.07); border-left: 3px solid var(--indigo); border-radius: 0 7px 7px 0; font-weight: 700; font-size: 13px; color: #1e293b; }
+.exp-plain-text { margin: 0; font-size: 13px; color: #1e293b; line-height: 1.7; }
+.exp-why-correct { padding: 10px 14px; background: #fff; border-bottom: 1px solid rgba(67,56,202,.07); font-size: 12.5px; color: #374151; }
+.exp-why-wrong { padding: 10px 14px; background: #fffbf7; border-bottom: 1px solid rgba(251,146,60,.1); }
+.exp-wrong-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 6px; font-size: 12.5px; color: #374151; }
+.exp-wrong-item:last-child { margin-bottom: 0; }
+.exp-wrong-badge { flex-shrink: 0; background: #ffedd5; color: #c2410c; border-radius: 5px; padding: 1px 7px; font-size: 11px; font-weight: 700; margin-top: 1px; }
+.exp-nudge { padding: 9px 14px; background: linear-gradient(135deg,#fafbff,#f0f5ff); display: flex; align-items: flex-start; gap: 9px; font-size: 12px; color: #374151; }
+.exp-nudge strong { color: var(--indigo); }
+
+/* Actions */
+.result-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; justify-content: center; }
+.ra-btn {
+  padding: 12px 24px; border-radius: 12px; font-weight: 700; font-size: .9rem;
+  text-decoration: none; border: none; cursor: pointer; font-family: 'Inter', sans-serif;
+  transition: transform .15s, box-shadow .15s;
+}
+.ra-btn:hover { transform: translateY(-2px); }
+.ra-btn-primary { background: linear-gradient(135deg,var(--indigo),var(--indigo-l)); color: #fff; box-shadow: 0 4px 14px rgba(67,56,202,.3); }
+.ra-btn-secondary { background: var(--white); color: var(--indigo); border: 2px solid var(--indigo-xl); }
+</style>
+
+
+<div class="result-wrap">
+
+  {% with pct=session.score|default:0 %}
+
+  <div class="score-hero {% if session.score >= session.total_questions %}great{% elif session.score >= session.total_questions|divisibleby:2 %}good{% else %}try{% endif %}">
+    <div class="score-emoji">
+      {% if session.score == session.total_questions %}🏆
+      {% elif session.score >= 3 %}⭐
+      {% else %}💪{% endif %}
+    </div>
+    <div class="score-big">{{ session.score }}/{{ session.total_questions }}</div>
+    <div class="score-label">
+      {% if session.score == session.total_questions %}Perfect Score! Outstanding!
+      {% elif session.score >= 3 %}Great effort! Keep it up!
+      {% else %}Good try! Review and come back stronger.{% endif %}
+    </div>
+    <div class="score-xp">+{{ xp_earned }} XP earned</div>
+    <div class="score-msg">Topic: {{ session.topic }}</div>
+  </div>
+
+  {% endwith %}
+
+  <!-- Question-by-question review -->
+  {% for question in questions %}
+  <div class="q-review">
+    <div class="q-review-header">
+      <span class="q-status-badge {% if question.is_correct %}badge-correct{% else %}badge-wrong{% endif %}">
+        {% if question.is_correct %}✓ Correct{% else %}✕ Incorrect{% endif %}
+      </span>
+      <div class="q-review-text">{{ question.question_text }}</div>
+    </div>
+
+    <div class="options-review">
+      {% for letter, opt_text in question.options_display %}
+        <div class="opt-pill
+          {% if question.correct_answer == letter %}is-correct{% endif %}
+          {% if question.selected_answer == letter %}was-selected{% endif %}">
+          <span class="pill-letter">{{ letter }}</span>
+          <span>{{ opt_text }}</span>
+          {% if question.correct_answer == letter %}&nbsp;✔{% endif %}
+        </div>
+      {% empty %}
+        <div class="opt-pill {% if question.correct_answer == 'A' %}is-correct{% endif %} {% if question.selected_answer == 'A' %}was-selected{% endif %}">
+          <span class="pill-letter">A</span><span>{{ question.option_a }}</span>{% if question.correct_answer == 'A' %}&nbsp;✔{% endif %}
+        </div>
+        <div class="opt-pill {% if question.correct_answer == 'B' %}is-correct{% endif %} {% if question.selected_answer == 'B' %}was-selected{% endif %}">
+          <span class="pill-letter">B</span><span>{{ question.option_b }}</span>{% if question.correct_answer == 'B' %}&nbsp;✔{% endif %}
+        </div>
+        <div class="opt-pill {% if question.correct_answer == 'C' %}is-correct{% endif %} {% if question.selected_answer == 'C' %}was-selected{% endif %}">
+          <span class="pill-letter">C</span><span>{{ question.option_c }}</span>{% if question.correct_answer == 'C' %}&nbsp;✔{% endif %}
+        </div>
+        <div class="opt-pill {% if question.correct_answer == 'D' %}is-correct{% endif %} {% if question.selected_answer == 'D' %}was-selected{% endif %}">
+          <span class="pill-letter">D</span><span>{{ question.option_d }}</span>{% if question.correct_answer == 'D' %}&nbsp;✔{% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    {# Explanation JSON stored in a script tag — avoids all HTML-attribute encoding issues #}
+    <div class="exp-box"
+         data-correct="{{ question.is_correct|yesno:'true,false' }}"
+         data-correct-answer="{{ question.correct_answer }}"
+         data-id="exp-{{ question.id }}"></div>
+    <script type="application/json" id="exp-{{ question.id }}">{{ question.explanation|safe }}</script>
+  </div>
+  {% endfor %}
+
+  <div class="result-actions">
+    <a href="{% url 'student_dashboard' %}" class="ra-btn ra-btn-primary">🏠 Back to Dashboard</a>
+    <a href="{% url 'daily_quiz' %}" class="ra-btn ra-btn-secondary">🔄 Take Today's Quiz</a>
+  </div>
+
+</div>
+
+
+<script>
+/* ── Rich Explanation Renderer (same logic as chat_room.html) ── */
+(function renderExplanations() {
+  function esc(str) {
+    return String(str||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  document.querySelectorAll(".exp-box[data-id]").forEach(function(box) {
+    var isCorrect     = box.dataset.correct === "true";
+    var correctLetter = box.dataset.correctAnswer || "";
+
+    var scriptEl = document.getElementById(box.dataset.id);
+    var rawStr   = scriptEl ? scriptEl.textContent : "";
+
+    var data = {};
+    try {
+      var parsed = JSON.parse(rawStr);
+      data = (typeof parsed === "string") ? JSON.parse(parsed) : parsed;
+    } catch(e) {
+      data = { solution: rawStr.replace(/<[^>]+>/g,"").trim(), why_correct: "", why_wrong: {}, hint: "" };
+    }
+
+    var solution   = data.solution    || "";
+    var whyCorrect = data.why_correct || "";
+    var whyWrong   = (data.why_wrong && typeof data.why_wrong === "object") ? data.why_wrong : {};
+    var hint       = data.hint || "";
+
+    var html = '<div class="exp-card">';
+
+    html += isCorrect
+      ? '<div class="exp-header exp-header-correct">✅ Correct! Here\'s why this answer works</div>'
+      : '<div class="exp-header exp-header-wrong">❌ Not quite — let\'s work through this together</div>';
+
+    if (correctLetter) {
+      html += '<div class="exp-correct-answer">✔ The right answer was <span>Option ' + esc(correctLetter) + '</span></div>';
+    }
+
+    if (!isCorrect && hint) {
+      html += '<div class="exp-hint"><span>💬</span><span><strong>Think about it:</strong> ' + esc(hint) + '</span></div>';
+    }
+
+    if (solution && typeof solution === "object") {
+      var steps = [];
+      ["step1","step2","step3","step4"].forEach(function(k){ if (solution[k]) steps.push(solution[k]); });
+      if (steps.length) {
+        html += '<div class="exp-steps-wrap"><div class="exp-section-label exp-section-label-blue">🧮 Step-by-step solution</div><ol class="exp-steps-ol">';
+        steps.forEach(function(s){ html += '<li>' + esc(s) + '</li>'; });
+        html += '</ol>';
+        if (solution.final_answer) html += '<div class="exp-final-answer">✔ Final Answer: ' + esc(solution.final_answer) + '</div>';
+        html += '</div>';
+      }
+    } else if (typeof solution === "string" && solution.trim()) {
+      html += '<div class="exp-steps-wrap"><div class="exp-section-label exp-section-label-blue">💡 Full explanation</div><p class="exp-plain-text">' + esc(solution) + '</p></div>';
+    }
+
+    if (whyCorrect) {
+      html += '<div class="exp-why-correct"><div class="exp-section-label exp-section-label-green">✅ Why Option ' + esc(correctLetter) + ' is correct</div><p class="exp-plain-text">' + esc(whyCorrect) + '</p></div>';
+    }
+
+    var wrongKeys = Object.keys(whyWrong).filter(function(k){ return k !== correctLetter; });
+    if (wrongKeys.length) {
+      html += '<div class="exp-why-wrong"><div class="exp-section-label exp-section-label-orange">🚫 Why other options don\'t work</div>';
+      wrongKeys.forEach(function(k){
+        html += '<div class="exp-wrong-item"><span class="exp-wrong-badge">Option ' + esc(k) + '</span><span>' + esc(whyWrong[k]) + '</span></div>';
+      });
+      html += '</div>';
+    }
+
+    html += '<div class="exp-nudge"><span>📖</span><div><strong>Want to understand this better?</strong><br>Ask SmartChat about this topic or look it up in your NCERT textbook!</div></div>';
+    html += '</div>';
+    box.innerHTML = html;
+  });
+}());
+</script>
+
+{% endblock %}

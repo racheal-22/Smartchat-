@@ -1,0 +1,223 @@
+{% extends "base_student.html" %}
+{% block content %}
+
+<style>
+:root {
+  --indigo: #4338ca; --indigo-l: #6366f1; --indigo-xl: #eef2ff;
+  --slate: #1e293b; --muted: #64748b; --border: #e2e8f0;
+  --white: #fff; --radius: 16px; --shadow: 0 4px 20px rgba(67,56,202,.08);
+}
+
+.quiz-wrap { max-width: 720px; margin: 0 auto; }
+
+.quiz-hero {
+  background: linear-gradient(135deg,#3730a3,#4338ca 55%,#6366f1);
+  border-radius: var(--radius); padding: 28px 32px; color: #fff;
+  margin-bottom: 28px; display: flex; justify-content: space-between;
+  align-items: center; flex-wrap: wrap; gap: 12px;
+}
+.quiz-hero h2 { margin: 0 0 4px; font-size: 1.4rem; font-weight: 800; }
+.quiz-hero p  { margin: 0; opacity: .78; font-size: .88rem; }
+.quiz-hero-meta { text-align: right; }
+.quiz-hero-meta .big { font-size: 2.2rem; font-weight: 900; line-height: 1; }
+.quiz-hero-meta small { font-size: .78rem; opacity: .7; display: block; }
+
+.quiz-progress-bar {
+  height: 5px; background: rgba(255,255,255,.25); border-radius: 10px;
+  margin-top: 14px; overflow: hidden;
+}
+.quiz-progress-fill {
+  height: 100%; background: #fff; border-radius: 10px;
+  transition: width .3s ease;
+}
+
+/* Question card */
+.q-card {
+  background: var(--white); border-radius: var(--radius);
+  padding: 28px 30px; box-shadow: var(--shadow);
+  margin-bottom: 18px; border: 1px solid var(--border);
+}
+.q-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 18px;
+}
+.q-num {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--indigo-xl);
+  color: var(--indigo); font-weight: 800; font-size: 13px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.q-text { font-size: 1rem; font-weight: 600; color: var(--slate); line-height: 1.5; flex: 1; }
+
+.options-grid { display: flex; flex-direction: column; gap: 10px; }
+
+.option-label {
+  display: flex; align-items: center; gap: 12px; padding: 13px 16px;
+  border-radius: 11px; border: 2px solid var(--border);
+  cursor: pointer; transition: all .15s; background: #fafbff;
+}
+.option-label:hover { border-color: var(--indigo-l); background: var(--indigo-xl); }
+.option-label input[type="radio"] { display: none; }
+.option-label.selected { border-color: var(--indigo); background: var(--indigo-xl); }
+.option-label.selected .opt-letter { background: var(--indigo); color: #fff; }
+
+.opt-letter {
+  width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+  background: var(--border); color: var(--muted);
+  font-weight: 800; font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .15s;
+}
+.opt-text { font-size: .9rem; color: var(--slate); line-height: 1.4; }
+
+/* Submit button */
+.submit-wrap { text-align: center; margin-top: 8px; }
+.submit-btn-main {
+  background: linear-gradient(135deg, var(--indigo), var(--indigo-l));
+  color: #fff; border: none; border-radius: 12px;
+  padding: 14px 40px; font-size: 1rem; font-weight: 700;
+  font-family: 'Inter', sans-serif; cursor: pointer;
+  box-shadow: 0 4px 16px rgba(67,56,202,.3);
+  transition: transform .15s, box-shadow .15s;
+}
+.submit-btn-main:hover { transform: translateY(-2px); box-shadow: 0 6px 22px rgba(67,56,202,.35); }
+.submit-btn-main:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+
+.unanswered-note {
+  display: none; margin-top: 10px;
+  font-size: .85rem; color: #dc2626;
+  text-align: center;
+}
+</style>
+
+
+<div class="quiz-wrap">
+
+  <a href="{% url 'student_dashboard' %}" style="
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:13px; font-weight:500; color:var(--muted);
+    text-decoration:none; margin-bottom:18px;
+    transition:color .15s;
+  " onmouseover="this.style.color='var(--indigo)'" onmouseout="this.style.color='var(--muted)'">
+    ← Back to Dashboard
+  </a>
+
+  <form method="POST" action="{% url 'submit_quiz' session.id %}" id="quiz-form">
+    {% csrf_token %}
+
+    <div class="quiz-hero">
+      <div>
+        <h2>🧠 Daily Brain Challenge</h2>
+        <p>{{ session.topic }} &nbsp;·&nbsp; Boost your weakest thinking skill</p>
+        <div class="quiz-progress-bar">
+          <div class="quiz-progress-fill" id="progress-fill" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="quiz-hero-meta">
+        <div class="big">{{ session.questions.count }}</div>
+        <small>Questions</small>
+      </div>
+    </div>
+
+    {% for q in session.questions.all %}
+    <div class="q-card" id="qcard-{{ q.id }}">
+      <div class="q-header">
+        <div class="q-num">{{ forloop.counter }}</div>
+        <div class="q-text">{{ q.question_text }}</div>
+      </div>
+
+      <div class="options-grid">
+        {% for letter, opt_text in q.options_display %}
+          <label class="option-label" for="opt-{{ q.id }}-{{ letter }}">
+            <input type="radio" id="opt-{{ q.id }}-{{ letter }}"
+                   name="question_{{ q.id }}" value="{{ letter }}">
+            <span class="opt-letter">{{ letter }}</span>
+            <span class="opt-text">{{ opt_text }}</span>
+          </label>
+        {% empty %}
+          <label class="option-label" for="opt-{{ q.id }}-A">
+            <input type="radio" id="opt-{{ q.id }}-A" name="question_{{ q.id }}" value="A">
+            <span class="opt-letter">A</span>
+            <span class="opt-text">{{ q.option_a }}</span>
+          </label>
+          <label class="option-label" for="opt-{{ q.id }}-B">
+            <input type="radio" id="opt-{{ q.id }}-B" name="question_{{ q.id }}" value="B">
+            <span class="opt-letter">B</span>
+            <span class="opt-text">{{ q.option_b }}</span>
+          </label>
+          <label class="option-label" for="opt-{{ q.id }}-C">
+            <input type="radio" id="opt-{{ q.id }}-C" name="question_{{ q.id }}" value="C">
+            <span class="opt-letter">C</span>
+            <span class="opt-text">{{ q.option_c }}</span>
+          </label>
+          <label class="option-label" for="opt-{{ q.id }}-D">
+            <input type="radio" id="opt-{{ q.id }}-D" name="question_{{ q.id }}" value="D">
+            <span class="opt-letter">D</span>
+            <span class="opt-text">{{ q.option_d }}</span>
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+
+    <div class="submit-wrap">
+      <p class="unanswered-note" id="unanswered-note">
+        ⚠️ Please answer all questions before submitting.
+      </p>
+      <button type="submit" class="submit-btn-main" id="submit-btn">
+        Submit Challenge →
+      </button>
+    </div>
+
+  </form>
+
+</div>
+
+
+<script>
+(function () {
+  var totalQuestions = {{ session.questions.count }};
+  var answered = 0;
+
+  /* Visual selection highlight + progress bar */
+  document.querySelectorAll(".option-label").forEach(function (label) {
+    label.addEventListener("click", function () {
+      var name = label.querySelector("input").name;
+      /* Clear selection in this group */
+      document.querySelectorAll("input[name='" + name + "']").forEach(function (inp) {
+        inp.closest(".option-label").classList.remove("selected");
+      });
+      label.classList.add("selected");
+      updateProgress();
+    });
+  });
+
+  function updateProgress() {
+    answered = document.querySelectorAll("input[type=radio]:checked").length;
+    var pct = Math.round((answered / totalQuestions) * 100);
+    document.getElementById("progress-fill").style.width = pct + "%";
+  }
+
+  /* Validate all answered before submit */
+  document.getElementById("quiz-form").addEventListener("submit", function (e) {
+    var all = true;
+    for (var i = 0; i < totalQuestions; i++) {
+      /* Check that at least one radio in each question group is selected */
+    }
+    var groups = {};
+    document.querySelectorAll("input[type=radio]").forEach(function (r) {
+      groups[r.name] = groups[r.name] || false;
+      if (r.checked) groups[r.name] = true;
+    });
+    var allAnswered = Object.values(groups).every(function (v) { return v; });
+    if (!allAnswered) {
+      e.preventDefault();
+      document.getElementById("unanswered-note").style.display = "block";
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+      return;
+    }
+    document.getElementById("submit-btn").disabled = true;
+    document.getElementById("submit-btn").textContent = "Submitting…";
+  });
+}());
+</script>
+
+{% endblock %}

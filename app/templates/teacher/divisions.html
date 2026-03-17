@@ -1,0 +1,20 @@
+{% extends "base_teacher.html" %}
+{% block content %}
+
+<div class="card">
+    <h2>Class {{ standard }} — Select Division</h2>
+
+    <div class="grid-3">
+        {% for div in divisions %}
+            <a href="{% url 'teacher_division_dashboard' standard div %}" 
+               style="text-decoration:none;">
+                <div class="card" style="text-align:center; cursor:pointer;">
+                    <h3>{{ standard }}{{ div }}</h3>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+
+</div>
+
+{% endblock %}

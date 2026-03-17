@@ -1,0 +1,615 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SmartChat — Think Smarter with AI</title>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #f9f9fb;
+      --white:     #ffffff;
+      --ink:       #0a0a0f;
+      --ink2:      #1a1a2e;
+      --body:      #52526e;
+      --muted:     #9898b2;
+      --accent:    #4361ee;
+      --accent-lt: #eef1ff;
+      --border:    rgba(0,0,0,0.07);
+      --border2:   rgba(0,0,0,0.05);
+      --font:      'Geist', system-ui, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--body);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ─────────────────────────────────
+       NAV
+    ───────────────────────────────── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      height: 58px;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 56px;
+      background: rgba(249,249,251,0.88);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-logo {
+      font-size: 16px; font-weight: 700; color: var(--ink);
+      text-decoration: none; letter-spacing: -0.4px;
+      display: flex; align-items: center; gap: 9px;
+    }
+    .nav-mark {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: linear-gradient(135deg, #4361ee, #7b8ff7);
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(67,97,238,0.28);
+    }
+    .nav-mark svg { width: 15px; height: 15px; }
+    .nav-r { display: flex; align-items: center; gap: 6px; }
+    .nav-a {
+      font-size: 13px; font-weight: 500; color: var(--body);
+      text-decoration: none; padding: 6px 13px; border-radius: 8px;
+      transition: background .15s, color .15s;
+    }
+    .nav-a:hover { background: var(--accent-lt); color: var(--accent); }
+    .nav-btn {
+      font-family: var(--font); font-size: 13px; font-weight: 600;
+      background: var(--ink); color: #fff; border: none; border-radius: 9px;
+      padding: 8px 18px; cursor: pointer; text-decoration: none;
+      transition: opacity .15s, transform .15s;
+    }
+    .nav-btn:hover { opacity: .88; transform: translateY(-1px); }
+
+    /* ─────────────────────────────────
+       SHARED
+    ───────────────────────────────── */
+    .wrap { max-width: 1160px; margin: 0 auto; }
+    .lbl {
+      font-size: 11px; font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--accent);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .lbl::before { content:''; width:18px; height:2px; background:var(--accent); border-radius:2px; }
+
+    /* ─────────────────────────────────
+       SECTION 1 — HERO
+    ───────────────────────────────── */
+    .hero {
+      padding: 110px 56px 72px;
+      display: flex; align-items: center;
+      position: relative; overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; top: -180px; left: -180px;
+      width: 680px; height: 680px;
+      background: radial-gradient(circle, rgba(67,97,238,.09) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .hero::after {
+      content: '';
+      position: absolute; bottom: -80px; right: 160px;
+      width: 460px; height: 460px;
+      background: radial-gradient(circle, rgba(123,143,247,.07) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .hero-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 72px; align-items: center; position: relative; z-index:1;
+    }
+    .hero-pill {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: var(--accent-lt); border: 1px solid rgba(67,97,238,.18);
+      border-radius: 100px; padding: 5px 13px;
+      font-size: 11.5px; font-weight: 600; color: var(--accent);
+      margin-bottom: 22px;
+    }
+    .live { width:6px; height:6px; border-radius:50%; background:#22c55e;
+      box-shadow: 0 0 0 2px rgba(34,197,94,.22); animation: blink 2.5s ease infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    .hero-h1 {
+      font-size: clamp(40px, 4.5vw, 60px); font-weight: 800;
+      color: var(--ink); line-height: 1.06; letter-spacing: -2px;
+      margin-bottom: 18px;
+    }
+    .hero-h1 .g {
+      background: linear-gradient(135deg, #4361ee 0%, #7b8ff7 55%, #a78bfa 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .hero-sub {
+      font-size: 16px; color: var(--body); line-height: 1.72;
+      max-width: 420px; margin-bottom: 34px;
+    }
+    .hero-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+    .btn {
+      font-family: var(--font); font-size: 14px; font-weight: 600;
+      padding: 12px 24px; border-radius: 11px; cursor: pointer;
+      text-decoration: none; display: inline-flex; align-items: center; gap: 7px;
+      transition: all .18s ease; border: none; letter-spacing: -.1px;
+    }
+    .btn-dk {
+      background: var(--ink); color: #fff;
+      box-shadow: 0 3px 14px rgba(10,10,15,.18), inset 0 1px 0 rgba(255,255,255,.1);
+    }
+    .btn-dk:hover { opacity:.88; transform:translateY(-1px); box-shadow: 0 6px 22px rgba(10,10,15,.22); }
+    .btn-lt {
+      background: var(--white); color: var(--ink);
+      border: 1.5px solid var(--border);
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    }
+    .btn-lt:hover { border-color: rgba(67,97,238,.3); color: var(--accent); background: var(--accent-lt); }
+    .btn svg { width:14px; height:14px; }
+    .hero-trust { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .tdot { width:3px; height:3px; border-radius:50%; background:var(--muted); }
+
+    /* chat mockup */
+    .mockup {
+      width: 100%; max-width: 440px;
+      background: var(--white); border-radius: 22px;
+      border: 1px solid rgba(0,0,0,.08);
+      box-shadow: 0 8px 40px rgba(0,0,0,.09), 0 2px 8px rgba(0,0,0,.05);
+      overflow: hidden;
+      animation: float 6s ease-in-out infinite;
+    }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+    .mock-bar {
+      padding: 13px 17px; border-bottom: 1px solid rgba(0,0,0,.06);
+      background: #f7f7f9;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .md { width:9px; height:9px; border-radius:50%; }
+    .md:nth-child(1){background:#ff5f57} .md:nth-child(2){background:#febc2e} .md:nth-child(3){background:#28c840}
+    .mock-title { flex:1; text-align:center; font-size:11.5px; font-weight:600; color:var(--muted); }
+    .mock-live { font-size:11px; color:#16a34a; font-weight:600; display:flex; align-items:center; gap:5px; }
+    .mock-body { padding: 18px 16px; display:flex; flex-direction:column; gap:12px; }
+    .mm { display:flex; gap:9px; align-items:flex-start; }
+    .mm.u { flex-direction:row-reverse; }
+    .mav {
+      width:28px; height:28px; border-radius:50%; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700;
+    }
+    .mav.ai { background:linear-gradient(135deg,#4361ee,#7b8ff7); color:#fff; font-size:13px; }
+    .mav.u  { background:#f0f0f4; color:var(--muted); border:1px solid var(--border); }
+    .mb {
+      max-width:80%; font-size:12.5px; line-height:1.58;
+      padding:9px 13px; border-radius:13px;
+    }
+    .mb.ai { background:#f3f5ff; color:var(--ink2); border-top-left-radius:3px; }
+    .mb.u  { background:var(--ink); color:#fff; border-top-right-radius:3px; }
+    .typing { display:flex; gap:3px; padding:10px 14px; background:#f3f5ff; border-radius:13px; border-top-left-radius:3px; }
+    .typing span { width:5px; height:5px; border-radius:50%; background:var(--muted); animation:ty 1.4s ease infinite; }
+    .typing span:nth-child(2){animation-delay:.2s} .typing span:nth-child(3){animation-delay:.4s}
+    @keyframes ty { 0%,60%,100%{opacity:.3;transform:scale(.85)} 30%{opacity:1;transform:scale(1)} }
+    .mock-input {
+      margin: 0 16px 16px;
+      background:#f3f5f9; border-radius:12px; padding:10px 13px;
+      display:flex; align-items:center; gap:9px;
+      border:1px solid rgba(0,0,0,.06);
+    }
+    .mock-input span { flex:1; font-size:12px; color:var(--muted); }
+    .send-btn { width:26px; height:26px; border-radius:8px; background:var(--ink); display:flex; align-items:center; justify-content:center; }
+    .send-btn svg { width:11px; height:11px; }
+
+    /* ─────────────────────────────────
+       DIVIDER
+    ───────────────────────────────── */
+    .section-div {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border), transparent);
+      margin: 0 56px;
+    }
+
+    /* ─────────────────────────────────
+       SECTION 2 — HOW IT WORKS
+    ───────────────────────────────── */
+    .how { padding: 60px 56px 56px; background: var(--white); }
+    .how-head { text-align:center; margin-bottom:40px; }
+    .how-h2 {
+      font-size: clamp(24px, 2.4vw, 34px); font-weight: 800;
+      color: var(--ink); letter-spacing: -1px; line-height: 1.12;
+      margin: 10px 0 8px;
+    }
+    .how-sub { font-size:14px; color:var(--muted); max-width:380px; margin:0 auto; line-height:1.65; }
+
+    .steps {
+      display: grid; grid-template-columns: repeat(3,1fr);
+      position: relative; gap: 0;
+    }
+    .steps::before {
+      content:'';
+      position:absolute; top:26px; left:calc(100%/6); right:calc(100%/6);
+      height:1px;
+      background: linear-gradient(90deg, transparent, rgba(67,97,238,.25), transparent);
+    }
+    .step { padding: 0 28px; text-align:center; }
+    .step-ball {
+      width:52px; height:52px; border-radius:50%;
+      background:var(--accent-lt); border:1.5px solid rgba(67,97,238,.2);
+      display:flex; align-items:center; justify-content:center;
+      margin: 0 auto 16px;
+      position:relative; z-index:1;
+    }
+    .step-ball svg { width:19px; height:19px; }
+    .step-title { font-size:14.5px; font-weight:700; color:var(--ink); margin-bottom:7px; letter-spacing:-.2px; }
+    .step-desc  { font-size:13px; color:var(--body); line-height:1.65; }
+
+    /* ─────────────────────────────────
+       SECTION 3 — FEATURES
+    ───────────────────────────────── */
+    .feats { padding: 56px 56px 60px; }
+    .feats-head { text-align:center; margin-bottom:36px; }
+    .feats-h2 {
+      font-size: clamp(24px, 2.4vw, 34px); font-weight: 800;
+      color: var(--ink); letter-spacing: -1px; line-height: 1.12;
+      margin: 10px 0 8px;
+    }
+    .feats-sub { font-size:14px; color:var(--muted); max-width:420px; margin:0 auto; line-height:1.65; }
+
+    .feat-grid {
+      display:grid; grid-template-columns:repeat(4,1fr);
+      gap:12px;
+    }
+    .fc {
+      background:var(--white); border:1px solid var(--border);
+      border-radius:18px; padding:22px 20px 24px;
+      position:relative; overflow:hidden;
+      transition:transform .22s ease, box-shadow .22s ease, border-color .22s;
+    }
+    .fc:hover { transform:translateY(-5px); box-shadow:0 14px 40px rgba(0,0,0,.09); border-color:rgba(67,97,238,.2); }
+    .fc::after {
+      content:''; position:absolute; bottom:0; left:0; right:0; height:3px;
+      background:var(--fc-color, #4361ee); opacity:0;
+      transition: opacity .22s;
+    }
+    .fc:hover::after { opacity:1; }
+    .fc:nth-child(1) { --fc-color:#4361ee; --fc-bg:#eef1ff; }
+    .fc:nth-child(2) { --fc-color:#7c3aed; --fc-bg:#f3eeff; }
+    .fc:nth-child(3) { --fc-color:#0ea5e9; --fc-bg:#e0f5ff; }
+    .fc:nth-child(4) { --fc-color:#10b981; --fc-bg:#dcfce7; }
+    .fc-ico {
+      width:44px; height:44px; border-radius:12px;
+      background:var(--fc-bg); display:flex; align-items:center; justify-content:center;
+      margin-bottom:18px;
+    }
+    .fc-ico svg { width:21px; height:21px; }
+    .fc-title { font-size:16px; font-weight:700; color:var(--ink); letter-spacing:-.3px; margin-bottom:9px; }
+    .fc-desc  { font-size:13px; color:var(--body); line-height:1.65; margin-bottom:13px; }
+    .fc-detail {
+      font-size:12px; color:var(--muted); line-height:1.6;
+      padding-top:13px; border-top:1px solid var(--border2);
+    }
+
+    /* ─────────────────────────────────
+       CTA BAND
+    ───────────────────────────────── */
+    .cta-band {
+      margin: 0 56px 60px;
+      background:var(--ink); border-radius:20px;
+      padding:44px 52px;
+      display:flex; align-items:center; justify-content:space-between; gap:36px;
+      position:relative; overflow:hidden;
+    }
+    .cta-band::before {
+      content:''; position:absolute; top:-60px; right:-60px;
+      width:320px; height:320px;
+      background:radial-gradient(circle, rgba(99,120,240,.22) 0%, transparent 65%);
+      pointer-events:none;
+    }
+    .cb-h { font-size:26px; font-weight:800; color:#fff; letter-spacing:-.7px; line-height:1.2; margin-bottom:8px; }
+    .cb-p { font-size:14px; color:rgba(255,255,255,.55); line-height:1.65; max-width:380px; }
+    .cb-r { display:flex; gap:9px; flex-shrink:0; position:relative; z-index:1; }
+    .btn-w {
+      font-family:var(--font); font-size:13.5px; font-weight:600;
+      background:#fff; color:var(--ink); border:none; border-radius:11px;
+      padding:12px 24px; cursor:pointer; text-decoration:none;
+      display:inline-flex; align-items:center; gap:7px;
+      box-shadow:0 2px 12px rgba(0,0,0,.15); transition:all .18s;
+    }
+    .btn-w:hover { transform:translateY(-2px); box-shadow:0 6px 22px rgba(0,0,0,.2); }
+    .btn-w svg { width:14px; height:14px; }
+    .btn-wg {
+      font-family:var(--font); font-size:13.5px; font-weight:600;
+      background:transparent; color:rgba(255,255,255,.8);
+      border:1.5px solid rgba(255,255,255,.18); border-radius:11px;
+      padding:12px 22px; cursor:pointer; text-decoration:none;
+      transition:all .18s;
+    }
+    .btn-wg:hover { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.35); }
+
+    /* ─────────────────────────────────
+       FOOTER
+    ───────────────────────────────── */
+    footer {
+      border-top:1px solid var(--border);
+      padding:22px 56px;
+      display:flex; align-items:center; justify-content:space-between;
+    }
+    .f-logo { font-size:14px; font-weight:700; color:var(--ink); text-decoration:none; letter-spacing:-.3px; }
+    .f-copy { font-size:12px; color:var(--muted); }
+    .f-links { display:flex; gap:18px; }
+    .f-links a { font-size:12px; color:var(--muted); text-decoration:none; transition:color .15s; }
+    .f-links a:hover { color:var(--ink); }
+
+    /* ─────────────────────────────────
+       SCROLL REVEAL
+    ───────────────────────────────── */
+    .reveal { opacity:0; transform:translateY(18px); transition:opacity .55s ease, transform .55s ease; }
+    .reveal.vis { opacity:1; transform:none; }
+
+    /* ─────────────────────────────────
+       RESPONSIVE
+    ───────────────────────────────── */
+    @media(max-width:960px){
+      nav { padding:0 24px; }
+      .hero, .how, .feats { padding-left:24px; padding-right:24px; }
+      .hero-grid { grid-template-columns:1fr; gap:40px; }
+      .hero-h1 { font-size:38px; }
+      .steps { grid-template-columns:1fr; gap:32px; }
+      .steps::before { display:none; }
+      .feat-grid { grid-template-columns:1fr 1fr; }
+      .cta-band { margin:0 24px 48px; flex-direction:column; padding:32px 28px; }
+      footer { padding:18px 24px; flex-direction:column; gap:10px; text-align:center; }
+      .section-div { margin:0 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─────── NAV ─────── -->
+<nav>
+  <a href="#" class="nav-logo">
+    <div class="nav-mark">
+      <svg viewBox="0 0 15 15" fill="none">
+        <circle cx="7.5" cy="6.5" r="4" stroke="white" stroke-width="1.4"/>
+        <circle cx="5.8" cy="5.9" r=".8" fill="white"/>
+        <circle cx="9.2" cy="5.9" r=".8" fill="white"/>
+        <path d="M5.5 8 Q7.5 9.4 9.5 8" stroke="white" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+        <line x1="7.5" y1="10.5" x2="7.5" y2="13" stroke="rgba(255,255,255,.55)" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="5.8" y1="12.2" x2="7.5" y2="13" stroke="rgba(255,255,255,.55)" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="9.2" y1="12.2" x2="7.5" y2="13" stroke="rgba(255,255,255,.55)" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    SmartChat
+  </a>
+  <div class="nav-r">
+    <a href="{% url 'login' %}" class="nav-a">Log in</a>
+    <a href="{% url 'teacher_signup' %}" class="nav-a">For Teachers</a>
+    <a href="{% url 'student_signup' %}" class="nav-btn">Get started</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════
+     SECTION 1 — HERO
+═══════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-grid wrap">
+
+    <!-- Left -->
+    <div>
+      <div class="hero-pill">
+        <div class="live"></div>
+        AI-Powered Learning
+      </div>
+      <h1 class="hero-h1">
+        Think Smarter<br>
+        <span class="g">with AI</span>
+      </h1>
+      <p class="hero-sub">Ask questions, understand concepts, and grow your thinking using our AI-powered cognitive framework.</p>
+      <div class="hero-btns">
+        <a href="{% url 'student_signup' %}" class="btn btn-dk">
+          <svg viewBox="0 0 14 14" fill="none"><path d="M7 1.5L12.5 7L7 12.5M12.5 7H1.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Get Started
+        </a>
+        <a href="{% url 'student_signup' %}" class="btn btn-lt">Join as Student</a>
+      </div>
+      <div class="hero-trust">
+        <div class="tdot"></div>AI powered learning assistant<div class="tdot"></div>Free to start
+      </div>
+    </div>
+
+    <!-- Right: chat mockup -->
+    <div style="display:flex;justify-content:center">
+      <div class="mockup">
+        <div class="mock-bar">
+          <div class="md"></div><div class="md"></div><div class="md"></div>
+          <div class="mock-title">SmartChat</div>
+          <div class="mock-live"><div class="live"></div>Online</div>
+        </div>
+        <div class="mock-body">
+          <div class="mm">
+            <div class="mav ai">✦</div>
+            <div class="mb ai">Hi! I'm SmartChat. Ask me anything — I'll help you think deeper and understand better. 🧠</div>
+          </div>
+          <div class="mm u">
+            <div class="mav u">S</div>
+            <div class="mb u">Can you explain Newton's second law simply?</div>
+          </div>
+          <div class="mm">
+            <div class="mav ai">✦</div>
+            <div class="mb ai"><strong>F = ma</strong> — Force equals mass × acceleration. Push something heavier and it moves less. Push harder and it moves more. Want an example?</div>
+          </div>
+          <div class="mm">
+            <div class="mav ai">✦</div>
+            <div class="typing"><span></span><span></span><span></span></div>
+          </div>
+        </div>
+        <div class="mock-input">
+          <span>Ask anything…</span>
+          <div class="send-btn">
+            <svg viewBox="0 0 11 11" fill="none"><path d="M1 5.5H10M10 5.5L6.5 2M10 5.5L6.5 9" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="section-div"></div>
+
+<!-- ═══════════════════════════════════
+     SECTION 2 — HOW IT WORKS
+═══════════════════════════════════ -->
+<section class="how reveal" style="transition-delay:.08s">
+  <div class="wrap">
+    <div class="how-head">
+      <div class="lbl" style="justify-content:center">How It Works</div>
+      <h2 class="how-h2">From question to insight<br>in three steps</h2>
+      <p class="how-sub">Simple enough for any student, powerful enough to actually change how you think.</p>
+    </div>
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-ball">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M10 4v12M4 10h12" stroke="#4361ee" stroke-width="1.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="step-title">You Ask</div>
+        <div class="step-desc">Type any question in plain language — about a topic, formula, or concept you want to understand. No special syntax required.</div>
+      </div>
+
+      <div class="step">
+        <div class="step-ball">
+          <svg viewBox="0 0 20 20" fill="none">
+            <circle cx="10" cy="10" r="3" stroke="#4361ee" stroke-width="1.8"/>
+            <path d="M10 3v2M10 15v2M3 10h2M15 10h2" stroke="#4361ee" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="step-title">AI Thinks With You</div>
+        <div class="step-desc">Gemini AI processes your question, identifies which cognitive dimension it targets, and builds a clear, structured explanation just for you.</div>
+      </div>
+
+      <div class="step">
+        <div class="step-ball">
+          <svg viewBox="0 0 20 20" fill="none">
+            <path d="M4 10l4 4 8-8" stroke="#4361ee" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="step-title">You Grow</div>
+        <div class="step-desc">You get a clear answer, earn XP, and your cognitive profile updates — showing you and your teacher exactly how your thinking is developing.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="section-div"></div>
+
+<!-- ═══════════════════════════════════
+     SECTION 4 — FEATURES
+═══════════════════════════════════ -->
+<section class="feats reveal" style="transition-delay:.12s">
+  <div class="wrap">
+    <div class="feats-head">
+      <div class="lbl" style="justify-content:center">Cognitive Framework</div>
+      <h2 class="feats-h2">Four dimensions of<br>intelligent thinking</h2>
+      <p class="feats-sub">Every answer you receive sharpens a specific thinking skill. SmartChat tracks all four and shows you where to grow.</p>
+    </div>
+    <div class="feat-grid">
+
+      <div class="fc">
+        <div class="fc-ico">
+          <svg viewBox="0 0 21 21" fill="none">
+            <rect x="2.5" y="2.5" width="7" height="7" rx="2" stroke="#4361ee" stroke-width="1.6"/>
+            <rect x="11.5" y="2.5" width="7" height="7" rx="2" stroke="#4361ee" stroke-width="1.6"/>
+            <rect x="2.5" y="11.5" width="7" height="7" rx="2" stroke="#4361ee" stroke-width="1.6"/>
+            <path d="M11.5 15H18.5M15 11.5V18.5" stroke="#4361ee" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="fc-title">Logic</div>
+        <div class="fc-desc">Solve problems with structured, step-by-step reasoning and build real analytical confidence.</div>
+        <div class="fc-detail">Strengthened by formula-based, calculation-driven questions. Core to mathematics and physics.</div>
+      </div>
+
+      <div class="fc">
+        <div class="fc-ico">
+          <svg viewBox="0 0 21 21" fill="none">
+            <circle cx="10.5" cy="10.5" r="2.8" stroke="#7c3aed" stroke-width="1.6"/>
+            <circle cx="3.5" cy="4.5" r="1.8" stroke="#7c3aed" stroke-width="1.4"/>
+            <circle cx="17.5" cy="4.5" r="1.8" stroke="#7c3aed" stroke-width="1.4"/>
+            <circle cx="3.5" cy="16.5" r="1.8" stroke="#7c3aed" stroke-width="1.4"/>
+            <circle cx="17.5" cy="16.5" r="1.8" stroke="#7c3aed" stroke-width="1.4"/>
+            <path d="M5.2 5.8L8.2 8.5M13.8 8.5L15.8 5.8M8.2 12.5L5.2 15.2M15.8 15.2L13.8 12.5" stroke="#7c3aed" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="fc-title">Systems</div>
+        <div class="fc-desc">Understand how things connect — map complex ideas, processes, and cause-effect relationships.</div>
+        <div class="fc-detail">Activated when questions require linking multiple concepts. Perfect for biology, economics, engineering.</div>
+      </div>
+
+      <div class="fc">
+        <div class="fc-ico">
+          <svg viewBox="0 0 21 21" fill="none">
+            <path d="M3.5 5.5h14M3.5 9.5h10M3.5 13.5h11M3.5 17.5h7" stroke="#0ea5e9" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="fc-title">Narrative</div>
+        <div class="fc-desc">Learn through well-structured explanations that make abstract concepts clear and easy to retain.</div>
+        <div class="fc-detail">Built through conceptual "explain it to me" questions. Core to history, literature, and science theory.</div>
+      </div>
+
+      <div class="fc">
+        <div class="fc-ico">
+          <svg viewBox="0 0 21 21" fill="none">
+            <path d="M10.5 2.5L18.5 7.5V14.5L10.5 19.5L2.5 14.5V7.5L10.5 2.5Z" stroke="#10b981" stroke-width="1.6" stroke-linejoin="round"/>
+            <path d="M10.5 2.5V19.5M2.5 7.5L18.5 7.5M2.5 14.5L18.5 14.5" stroke="#10b981" stroke-width="1.1" stroke-linecap="round" opacity=".45"/>
+          </svg>
+        </div>
+        <div class="fc-title">Spatial</div>
+        <div class="fc-desc">Build mental models, improve visualization, and develop consistent, lasting learning habits.</div>
+        <div class="fc-detail">Tracked through consistency and quiz completion — reflects how regularly you engage and build knowledge.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── CTA BAND ─── -->
+<div class="cta-band reveal" style="transition-delay:.16s">
+  <div style="position:relative;z-index:1">
+    <div class="cb-h">Ready to think differently?<br>Start for free today.</div>
+    <div class="cb-p">Join students already using SmartChat to ask better questions, understand harder concepts, and grow every day.</div>
+  </div>
+  <div class="cb-r">
+    <a href="{% url 'student_signup' %}" class="btn-w">
+      <svg viewBox="0 0 14 14" fill="none"><path d="M7 1.5L12.5 7L7 12.5M12.5 7H1.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Get Started
+    </a>
+    <a href="{% url 'teacher_signup' %}" class="btn-wg">For Teachers</a>
+  </div>
+</div>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <a href="#" class="f-logo">SmartChat</a>
+  <div class="f-copy">© 2026 SmartChat · Built for cognitive growth</div>
+  <div class="f-links">
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="#">Contact</a>
+  </div>
+</footer>
+
+<script>
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('vis'); io.unobserve(e.target); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+</script>
+
+</body>
+</html>

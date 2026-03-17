@@ -1,0 +1,60 @@
+{% extends "base_teacher.html" %}
+{% block content %}
+
+<style>
+  :root {
+    --indigo: #4338ca; --indigo-l: #6366f1; --indigo-xl: #eef2ff;
+    --slate: #1e293b; --muted: #64748b; --border: #e2e8f0;
+    --bg: #f8fafc; --white: #fff; --radius: 16px;
+    --shadow: 0 4px 20px rgba(67,56,202,.08);
+  }
+  .page-header {
+    background: linear-gradient(135deg,#3730a3,#6366f1 60%,#818cf8);
+    border-radius: var(--radius); padding: 32px 36px; color: #fff; margin-bottom: 28px;
+  }
+  .page-header h2 { margin: 0 0 6px; font-size: 1.6rem; font-weight: 800; }
+  .page-header p  { margin: 0; opacity: .8; font-size: .9rem; }
+  .card { background: var(--white); border-radius: var(--radius); padding: 24px 26px; box-shadow: var(--shadow); margin-bottom: 24px; }
+  .card h3 { margin: 0 0 4px; font-size: 1rem; font-weight: 700; color: var(--slate); }
+  .card-sub { font-size: .8rem; color: var(--muted); margin: 0 0 20px; }
+  .std-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap: 18px; }
+  .std-card {
+    background: var(--white); border: 2px solid var(--border); border-radius: 14px;
+    padding: 28px 20px; text-align: center; text-decoration: none; color: var(--slate);
+    transition: border-color .18s, box-shadow .18s, transform .18s; display: block;
+  }
+  .std-card:hover { border-color: var(--indigo-l); box-shadow: 0 8px 28px rgba(99,102,241,.18); transform: translateY(-3px); }
+  .std-card .sc-num { font-size: 2.2rem; font-weight: 900; color: var(--indigo); line-height: 1; margin-bottom: 8px; }
+  .std-card .sc-label { font-size: .82rem; color: var(--muted); font-weight: 600; }
+  .std-card .sc-arrow { display: inline-block; margin-top: 12px; background: var(--indigo-xl); color: var(--indigo); padding: 4px 12px; border-radius: 20px; font-size: .75rem; font-weight: 700; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+  .empty-state .es-icon { font-size: 3rem; margin-bottom: 12px; }
+</style>
+
+<div class="page-header">
+  <h2>📊 Teacher Analytics Dashboard</h2>
+  <p>Select a class standard to explore learning insights for your students.</p>
+</div>
+
+<div class="card">
+  <h3>Select Standard</h3>
+  <p class="card-sub">Choose a class to view detailed division-level analytics, quiz performance, and learning insights.</p>
+  {% if standards %}
+    <div class="std-grid">
+      {% for std in standards %}
+        <a href="{% url 'teacher_divisions' std %}" class="std-card">
+          <div class="sc-num">{{ std }}</div>
+          <div class="sc-label">Class {{ std }}</div>
+          <span class="sc-arrow">View Analytics →</span>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="es-icon">🎓</div>
+      <p>No students have registered yet. Once students sign up, their analytics will appear here.</p>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

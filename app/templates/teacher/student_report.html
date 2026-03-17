@@ -1,0 +1,275 @@
+{% extends "base_teacher.html" %}
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+  :root {
+    --indigo:    #4338ca; --indigo-l: #6366f1; --indigo-xl: #eef2ff;
+    --slate:     #1e293b; --muted:    #64748b; --border:    #e2e8f0;
+    --bg:        #f8fafc; --white:    #ffffff; --radius:    16px;
+    --shadow:    0 4px 20px rgba(67,56,202,.08);
+  }
+  .dash-wrap { max-width: 1000px; margin: 0 auto; }
+
+  .student-hero {
+    background: linear-gradient(135deg,#3730a3,#6366f1 60%,#818cf8);
+    border-radius: var(--radius); padding: 30px 36px; margin-bottom: 28px; color: #fff;
+    display: flex; align-items: center; gap: 22px; flex-wrap: wrap;
+  }
+  .stu-avatar {
+    width: 64px; height: 64px; border-radius: 50%;
+    background: rgba(255,255,255,.22); display: flex; align-items: center;
+    justify-content: center; font-size: 1.8rem; flex-shrink: 0;
+  }
+  .stu-name   { margin:0; font-size:1.5rem; font-weight:800; }
+  .stu-meta   { margin:4px 0 0; opacity:.78; font-size:.88rem; }
+
+  .card { background:var(--white); border-radius:var(--radius); padding:24px 26px; box-shadow:var(--shadow); margin-bottom:24px; }
+  .card h3  { margin:0 0 3px; font-size:1rem; font-weight:700; color:var(--slate); }
+  .card-sub { font-size:.8rem; color:var(--muted); margin:0 0 16px; }
+
+  .chart-box { position:relative; }
+  .chart-box canvas { display:block; }
+
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  @media(max-width:800px){ .grid-2,.grid-4{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:500px){ .grid-2,.grid-4{ grid-template-columns:1fr; } }
+
+  .stat-tile { border-radius:14px; padding:18px 16px; background:var(--bg); border:1px solid var(--border); text-align:center; }
+  .stat-tile .st-icon  { font-size:1.6rem; margin-bottom:6px; }
+  .stat-tile .st-val   { font-size:1.9rem; font-weight:900; color:var(--indigo); line-height:1; }
+  .stat-tile .st-label { font-size:.76rem; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-top:4px; }
+
+  .dim-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .dim-row:last-child { border:none; }
+  .dim-row .dr-icon  { font-size:1.2rem; flex-shrink:0; }
+  .dim-row .dr-name  { font-size:.88rem; font-weight:700; color:var(--slate); flex:1; }
+  .dim-row .dr-bar-wrap { flex:3; background:#f1f5f9; border-radius:20px; height:8px; overflow:hidden; }
+  .dim-row .dr-bar   { height:100%; border-radius:20px; }
+  .dim-row .dr-val   { font-size:.85rem; font-weight:800; color:var(--slate); min-width:36px; text-align:right; }
+  .bar-logic     { background:linear-gradient(90deg,#4338ca,#818cf8); }
+  .bar-systems   { background:linear-gradient(90deg,#0f766e,#2dd4bf); }
+  .bar-narrative { background:linear-gradient(90deg,#b45309,#fbbf24); }
+  .bar-spatial   { background:linear-gradient(90deg,#7c3aed,#c084fc); }
+
+  .mastery-table { width:100%; border-collapse:collapse; margin-top:6px; }
+  .mastery-table th { padding:9px 12px; text-align:left; font-size:.75rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); border-bottom:2px solid var(--border); }
+  .mastery-table td { padding:10px 12px; border-bottom:1px solid var(--border); font-size:.88rem; vertical-align:middle; }
+  .mastery-table tr:last-child td { border:none; }
+  .mastery-pct {
+    display:inline-flex; align-items:center; gap:6px;
+    font-weight:700; font-size:.85rem;
+  }
+  .pct-bar-wrap { width:80px; background:#f1f5f9; border-radius:20px; height:6px; overflow:hidden; display:inline-block; }
+  .pct-bar      { height:100%; border-radius:20px; }
+  .mastered-badge { background:#dcfce7; color:#16a34a; padding:2px 8px; border-radius:20px; font-size:.72rem; font-weight:700; }
+  .progress-badge { background:#fef3c7; color:#b45309; padding:2px 8px; border-radius:20px; font-size:.72rem; font-weight:700; }
+
+  .dim-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-size:.72rem; font-weight:700; text-transform:uppercase; }
+  .db-LOGIC     { background:#eef2ff; color:#4338ca; }
+  .db-SYSTEMS   { background:#ccfbf1; color:#0f766e; }
+  .db-NARRATIVE { background:#fef9c3; color:#a16207; }
+  .db-SPATIAL   { background:#faf5ff; color:#7c3aed; }
+
+  .back-link { display:inline-flex; align-items:center; gap:6px; color:var(--indigo); text-decoration:none; font-size:.88rem; font-weight:600; margin-bottom:20px; }
+  .back-link:hover { text-decoration:underline; }
+
+  .empty-state-msg { color:var(--muted); font-size:.88rem; padding:24px 0; text-align:center; }
+</style>
+
+<div class="dash-wrap">
+
+  <a href="javascript:history.back()" class="back-link">← Back to class</a>
+
+  <!-- Hero -->
+  <div class="student-hero">
+    <div class="stu-avatar">🎓</div>
+    <div>
+      <h2 class="stu-name">{{ student.username }}</h2>
+      <p class="stu-meta">
+        Class {{ student.standard }}{% if student.division %} &nbsp;·&nbsp; Division {{ student.division }}{% endif %}
+        &nbsp;·&nbsp; Roll No. {{ student.roll_number|default:"—" }}
+      </p>
+    </div>
+    <div style="margin-left:auto; text-align:right;">
+      {% with profile.xp_logic as l %}{% with profile.xp_systems as s %}{% with profile.xp_narrative as n %}{% with profile.xp_spatial as sp %}
+        {% if l >= s and l >= n and l >= sp %}<span class="dim-badge db-LOGIC" style="font-size:.8rem; padding:4px 14px;">🧮 Logic Dominant</span>
+        {% elif s >= l and s >= n and s >= sp %}<span class="dim-badge db-SYSTEMS" style="font-size:.8rem; padding:4px 14px;">🔍 Systems Dominant</span>
+        {% elif n >= l and n >= s and n >= sp %}<span class="dim-badge db-NARRATIVE" style="font-size:.8rem; padding:4px 14px;">📘 Narrative Dominant</span>
+        {% else %}<span class="dim-badge db-SPATIAL" style="font-size:.8rem; padding:4px 14px;">⏳ Spatial Dominant</span>{% endif %}
+      {% endwith %}{% endwith %}{% endwith %}{% endwith %}
+    </div>
+  </div>
+
+  <!-- Summary Stats -->
+  <div class="grid-4" style="margin-bottom:24px;">
+    <div class="stat-tile">
+      <div class="st-icon">⭐</div>
+      <div class="st-val">{{ profile.total_xp }}</div>
+      <div class="st-label">Total XP</div>
+    </div>
+    <div class="stat-tile">
+      <div class="st-icon">🔭</div>
+      <div class="st-val">{{ curiosity_score|default:0 }}</div>
+      <div class="st-label">Topics Explored</div>
+    </div>
+    <div class="stat-tile">
+      <div class="st-icon">🎯</div>
+      <div class="st-val">{{ quiz_accuracy|default:0 }}%</div>
+      <div class="st-label">Quiz Accuracy</div>
+    </div>
+    <div class="stat-tile">
+      <div class="st-icon">🏅</div>
+      <div class="st-val">{{ topics_mastered|default:0 }}</div>
+      <div class="st-label">Topics Mastered</div>
+    </div>
+  </div>
+
+  <!-- Radar + Dimension Bars -->
+  <div class="grid-2">
+    <div class="card">
+      <h3>Learning Dimension Radar</h3>
+      <p class="card-sub">Visual overview of this student's strengths across all four learning dimensions</p>
+      {% if profile.total_xp %}
+        <div class="chart-box" style="height:280px;">
+          <canvas id="studentRadar"></canvas>
+        </div>
+      {% else %}
+        <div class="empty-state-msg">
+          No learning data yet. The radar chart will appear once the student completes quizzes.
+        </div>
+      {% endif %}
+    </div>
+    <div class="card">
+      <h3>XP Breakdown by Dimension</h3>
+      <p class="card-sub">Raw XP scores — higher means stronger ability in that learning dimension</p>
+      <div id="dimBars" style="margin-top:8px;">
+        <div class="dim-row">
+          <span class="dr-icon">🧮</span>
+          <span class="dr-name">Logic</span>
+          <div class="dr-bar-wrap"><div class="dr-bar bar-logic" id="bar-logic" style="width:0%"></div></div>
+          <span class="dr-val">{{ profile.xp_logic }}</span>
+        </div>
+        <div class="dim-row">
+          <span class="dr-icon">🔍</span>
+          <span class="dr-name">Systems</span>
+          <div class="dr-bar-wrap"><div class="dr-bar bar-systems" id="bar-systems" style="width:0%"></div></div>
+          <span class="dr-val">{{ profile.xp_systems }}</span>
+        </div>
+        <div class="dim-row">
+          <span class="dr-icon">📘</span>
+          <span class="dr-name">Narrative</span>
+          <div class="dr-bar-wrap"><div class="dr-bar bar-narrative" id="bar-narrative" style="width:0%"></div></div>
+          <span class="dr-val">{{ profile.xp_narrative }}</span>
+        </div>
+        <div class="dim-row">
+          <span class="dr-icon">⏳</span>
+          <span class="dr-name">Spatial</span>
+          <div class="dr-bar-wrap"><div class="dr-bar bar-spatial" id="bar-spatial" style="width:0%"></div></div>
+          <span class="dr-val">{{ profile.xp_spatial }}</span>
+        </div>
+      </div>
+      {% if not profile.total_xp %}
+        <p style="color:var(--muted);font-size:.8rem;margin-top:12px;">Bars will scale once XP is earned.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Topic Mastery -->
+  <div class="card">
+    <h3>📚 Topic Mastery Progress</h3>
+    <p class="card-sub">Shows how well this student has mastered each topic they have been quizzed on. Mastered = 80% or above accuracy.</p>
+    {% if topic_masteries %}
+      <table class="mastery-table">
+        <thead>
+          <tr>
+            <th>Subject</th>
+            <th>Topic</th>
+            <th>Questions</th>
+            <th>Correct</th>
+            <th>Mastery</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tm in topic_masteries %}
+          <tr>
+            <td>{{ tm.subject }}</td>
+            <td><strong>{{ tm.topic }}</strong></td>
+            <td>{{ tm.total_questions }}</td>
+            <td>{{ tm.correct_answers }}</td>
+            <td>
+              <div class="mastery-pct">
+                <span style="min-width:38px;">{{ tm.mastery_percentage|floatformat:0 }}%</span>
+                <div class="pct-bar-wrap">
+                  <div class="pct-bar" style="width:{{ tm.mastery_percentage|floatformat:0 }}%; background:{% if tm.mastery_percentage >= 80 %}#22c55e{% elif tm.mastery_percentage >= 50 %}#f59e0b{% else %}#ef4444{% endif %};"></div>
+                </div>
+              </div>
+            </td>
+            <td>
+              {% if tm.mastery_percentage >= 80 %}
+                <span class="mastered-badge">✅ Mastered</span>
+              {% else %}
+                <span class="progress-badge">🔄 In Progress</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color:var(--muted);font-size:.88rem;">No topic mastery data yet. This will populate once the student completes quizzes linked to chat sessions.</p>
+    {% endif %}
+  </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  const xpLogic     = {{ profile.xp_logic }};
+  const xpSystems   = {{ profile.xp_systems }};
+  const xpNarrative = {{ profile.xp_narrative }};
+  const xpSpatial   = {{ profile.xp_spatial }};
+
+  // ── Dimension bars — only scale when XP exists ──────────────
+  const maxXP = Math.max(xpLogic, xpSystems, xpNarrative, xpSpatial);
+
+  if (maxXP > 0) {
+    document.getElementById("bar-logic").style.width     = (xpLogic     / maxXP * 100) + "%";
+    document.getElementById("bar-systems").style.width   = (xpSystems   / maxXP * 100) + "%";
+    document.getElementById("bar-narrative").style.width = (xpNarrative / maxXP * 100) + "%";
+    document.getElementById("bar-spatial").style.width   = (xpSpatial   / maxXP * 100) + "%";
+  }
+
+  // ── Radar chart — only render when XP data exists ───────────
+  const radarCanvas = document.getElementById("studentRadar");
+  if (radarCanvas && maxXP > 0) {
+    new Chart(radarCanvas, {
+      type: "radar",
+      data: {
+        labels: ["Logic", "Systems", "Narrative", "Spatial"],
+        datasets: [{
+          label: "{{ student.username }}",
+          data: [xpLogic, xpSystems, xpNarrative, xpSpatial],
+          borderColor: "#4338ca",
+          backgroundColor: "rgba(67,56,202,.15)",
+          pointBackgroundColor: "#4338ca",
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: { r: { beginAtZero: true, ticks: { stepSize: 20 } } },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+
+});
+</script>
+
+{% endblock %}

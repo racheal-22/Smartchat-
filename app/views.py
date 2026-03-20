@@ -142,7 +142,7 @@ def student_signup(request):
             school_name=school_name,
         )
 
-        StudentProfile.objects.create(user=user)
+        #StudentProfile.objects.create(user=user)
 
         messages.success(request, "Account created successfully. Please login.")
         return redirect("login")
